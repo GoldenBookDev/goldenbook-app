@@ -16,7 +16,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Firebase
-config/firebase-service-account.json
+config/goldenbook-50d13-firebase-adminsdk-3xei3-0dd269a344.json
 
 # OS specific
 .DS_Store
@@ -29,5 +29,6 @@ Thumbs.db
 *.ntvs*
 *.njsproj
 *.sln
-goldenbook-backend/config/goldenbook-50d13-firebase-adminsdk-3xei3-0dd269a344.json
+
+
 
