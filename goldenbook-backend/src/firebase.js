@@ -10,8 +10,4 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-console.log('GOOGLE_APPLICATION_CREDENTIALS:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
-
-
 module.exports = { admin, db };

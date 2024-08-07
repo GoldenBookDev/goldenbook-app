@@ -4,7 +4,7 @@ Goldenbook is a mobile application developed in React Native that allows users t
 
 ## Screenshots
 
-![Alt](/goldenbook-app/assets/images/Phone-Goldenbook-Mockups%201.jpg "Phone Goldenbook Mockups")
+![Alt](/expo-router/src/assets/images/Phone-Goldenbook-Mockups%201.jpg "Phone Goldenbook Mockups")
 
 ## Technologies Used
 
