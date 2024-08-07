@@ -12,7 +12,12 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { signIn, signOutUser, signUp } from "../services/authService";
+import {
+  sendEmailVerification,
+  signIn,
+  signOutUser,
+  signUp,
+} from "../services/authService";
 import { auth } from "../services/firebaseConfig";
 
 type AuthContextType = {
@@ -55,12 +60,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithEmail = async (email: string, password: string) => {
     const userCredential = await signIn(email, password);
-    setUser(userCredential.user);
-    return userCredential;
+    setUser(userCredential.data);
+    return userCredential.data;
   };
 
   const signUpWithEmail = async (email: string, password: string) => {
     await signUp(email, password);
+    await sendEmailVerification(email);
   };
 
   const signOut = async () => {

@@ -20,6 +20,7 @@
     "@tamagui/config": "^1.108.0",
     "@tamagui/font-inter": "^1.108.0",
     "@tamagui/toast": "^1.108.0",
+    "axios": "^1.7.3",
     "babel-preset-expo": "^11.0.6",
     "burnt": "^0.12.2",
     "expo": "~51.0.9",

@@ -1,4 +1,3 @@
-// src/app/_layout.tsx
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import {
   DarkTheme,

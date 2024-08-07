@@ -1,24 +1,19 @@
 const express = require('express');
-const dotenv = require('dotenv');
-
-// Configurar dotenv para acceder a las variables de entorno
-dotenv.config();
-
-const { admin, db } = require('./firebase');
-const userRoutes = require('./routes/userRoutes');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-// Middleware para parsear JSON
-app.use(express.json());
+app.use(cors({
+    origin: 'http://localhost:8081'
+}));
 
-// Rutas
-app.use('/api/users', userRoutes);
+app.use(bodyParser.json());
 
-// Puerto de la aplicación
+app.use('/api/auth', authRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
-module.exports = app;

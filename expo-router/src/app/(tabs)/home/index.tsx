@@ -1,9 +1,8 @@
-// src/app/(tabs)/home/index.tsx
 import { useRouter } from "expo-router";
 import React from "react";
 import { Text, View } from "react-native";
 import { Button } from "tamagui";
-import { useAuth } from "../../../hooks/useAuth";
+import { useAuth } from "../../../contexts/AuthContext";
 import { globalStyles } from "../../../styles/globalStyles";
 
 const HomeScreen: React.FC = () => {

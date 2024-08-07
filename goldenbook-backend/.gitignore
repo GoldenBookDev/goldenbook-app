@@ -16,7 +16,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Firebase
-config/goldenbook-50d13-firebase-adminsdk-3xei3-0dd269a344.json
+src/config/goldenbook-50d13-firebase-adminsdk-3xei3-0dd269a344.json
 
 # OS specific
 .DS_Store

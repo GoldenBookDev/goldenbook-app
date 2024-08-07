@@ -1,55 +1,19 @@
-import {
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-  signInWithEmailAndPassword,
-  signOut,
-} from "firebase/auth";
-import { auth } from "./firebaseConfig";
+import axios from "axios";
+
+const API_URL = "http://localhost:3000/api/auth";
 
 export const signUp = async (email: string, password: string) => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const user = userCredential.user;
-    await sendEmailVerification(user);
-    console.log("Email de verificación enviado");
-    await signOut(auth); // Forzar el cierre de sesión hasta que se verifique el correo
-  } catch (error) {
-    console.error("Error durante el registro:", error);
-    throw error;
-  }
+  return axios.post(`${API_URL}/signup`, { email, password });
 };
 
 export const signIn = async (email: string, password: string) => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-    const user = userCredential.user;
-    if (!user.emailVerified) {
-      await signOut(auth);
-      throw new Error(
-        "El correo electrónico no está verificado. Por favor, verifica tu correo electrónico antes de iniciar sesión."
-      );
-    }
-    console.log("Usuario autenticado:", user);
-    return userCredential;
-  } catch (error) {
-    console.error("Error durante el inicio de sesión:", error);
-    throw error;
-  }
+  return axios.post(`${API_URL}/signin`, { email, password });
+};
+
+export const sendEmailVerification = async (email: string) => {
+  return axios.post(`${API_URL}/verify-email`, { email });
 };
 
 export const signOutUser = async () => {
-  try {
-    await signOut(auth);
-    console.log("Usuario desautenticado");
-  } catch (error) {
-    console.error("Error durante el cierre de sesión:", error);
-  }
+  return axios.post(`${API_URL}/signout`);
 };
