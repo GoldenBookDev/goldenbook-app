@@ -1,28 +1,69 @@
 {
   "expo": {
-    "name": "goldenbook",
+    "name": "Goldenbook",
     "slug": "goldenbook",
+    "scheme": "com.bwebstudio.goldenbook",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Goldenbook necesita acceder a tu ubicación para mostrarte lugares cercanos.",
+          "locationAlwaysPermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos incluso cuando la app está en segundo plano.",
+          "locationWhenInUsePermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos."
+        }
+      ]
+    ],
     "ios": {
+      "bundleIdentifier": "com.bwebstudio.goldenbook",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "1659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com"
+        }
+      },
       "supportsTablet": true
     },
     "android": {
+      "package": "com.bwebstudio.goldenbook",
+      "config": {
+        "googleSignIn": {
+          "certificateHash": "3C0C146EF596A87719E971EC79A45EE6E2BB2274"
+        },
+        "googleMaps": {
+          "apiKey": "AIzaSyDTPKWJrmWJBhCPRV0CEIweYGVtdeDLATE"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "134f9bf5-71ef-42f0-bef9-789e42476be1"
+      }
+    },
+    "owner": "goldenbook"
   }
 }

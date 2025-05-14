@@ -1,0 +1,290 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getLocations, Location } from '../services/firestoreService';
+
+const { width } = Dimensions.get('window');
+
+const LocationSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({});
+  const fadeAnims = useRef<{[key: string]: Animated.Value}>({});
+
+  // Cargar ubicaciones desde Firestore
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setLoading(true);
+        const locationsData = await getLocations();
+        
+        // Inicializar estados de carga de imágenes y animaciones
+        const initialLoadingStates: {[key: string]: boolean} = {};
+        const initialFadeAnims: {[key: string]: Animated.Value} = {};
+        
+        locationsData.forEach(location => {
+          initialLoadingStates[location.id] = true;
+          initialFadeAnims[location.id] = new Animated.Value(0);
+        });
+        
+        setImageLoadingStates(initialLoadingStates);
+        fadeAnims.current = initialFadeAnims;
+        
+        setLocations(locationsData);
+      } catch (err) {
+        console.error('Error fetching locations:', err);
+        setError('Failed to load locations. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
+
+  // Gestionar estado de carga de cada imagen y animar la aparición
+  const handleImageLoad = (locationId: string) => {
+    // Actualizar estado de carga
+    setImageLoadingStates(prevStates => ({
+      ...prevStates,
+      [locationId]: false
+    }));
+    
+    // Animar la aparición gradual
+    Animated.timing(fadeAnims.current[locationId], {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleLocationSelect = async (locationId: string) => {
+    try {
+      setLoading(true);
+      await AsyncStorage.setItem('@goldenbook_selected_location', locationId);
+      navigation.navigate('HomeScreen', { selectedLocation: locationId });
+    } catch (error) {
+      console.error('Error saving location selection:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setLoading(true);
+  };
+
+  // Helper para obtener la mejor imagen según device
+  const getOptimalImageUrl = (location: Location) => {
+    // Usar thumbnail para vista de lista (carga más rápida)
+    if (location.imageVersions?.thumbnail) {
+      return location.imageVersions.thumbnail;
+    }
+    // Fallback a imagen original si no hay versiones
+    return location.image;
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#00B383" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={handleRetry}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerContainer}>
+            <Text style={styles.title}>Select a location</Text>
+            <Text style={styles.subtitle}>
+              Which location would you like to browse?
+            </Text>
+          </View>
+
+          <View>
+            {locations.map((location) => (
+              <TouchableOpacity
+                key={location.id}
+                style={styles.locationCard}
+                onPress={() => handleLocationSelect(location.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.imageContainer}>
+                  {imageLoadingStates[location.id] && (
+                    <View style={styles.imagePlaceholder}>
+                      <ActivityIndicator size="small" color="#00B383" />
+                    </View>
+                  )}
+                  <Animated.View 
+                    style={[
+                      styles.imageWrapper,
+                      { opacity: fadeAnims.current[location.id] || 0 }
+                    ]}
+                  >
+                    <Image 
+                      source={{ 
+                        uri: getOptimalImageUrl(location),
+                        cache: 'force-cache' // Usar cache agresivo para mejor performance
+                      }}
+                      style={styles.locationImage}
+                      onLoadStart={() => {
+                        setImageLoadingStates(prev => ({...prev, [location.id]: true}));
+                      }}
+                      onLoadEnd={() => handleImageLoad(location.id)}
+                      onError={(e) => {
+                        console.log(`Error loading image for ${location.name}:`, e.nativeEvent.error);
+                        handleImageLoad(location.id); // Mostrar aunque falle
+                      }}
+                    />
+                  </Animated.View>
+                </View>
+                <View style={styles.locationLabelContainer}>
+                  <Text style={styles.locationLabel}>{location.name}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      )}
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: width * 0.03,
+    fontSize: width * 0.04,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#6C757D',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingTop: 10,
+    paddingHorizontal: width * 0.05,
+    paddingVertical: width * 0.05,
+  },
+  headerContainer: {
+    marginBottom: width * 0.06,
+  },
+  title: {
+    fontSize: width * 0.07,
+    fontFamily: 'EuclidSquare-SemiBold',
+    color: '#1A1A2E',
+    marginBottom: width * 0.02,
+  },
+  subtitle: {
+    fontSize: width * 0.04,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#6C757D',
+  },
+  locationCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: width * 0.05,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  imageContainer: {
+    width: '100%',
+    height: width * 0.37,
+    position: 'relative',
+  },
+  imageWrapper: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    zIndex: 2,
+  },
+  locationImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  imagePlaceholder: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#e1e1e1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  locationLabelContainer: {
+    position: 'absolute',
+    top: width * 0.03,
+    left: width * 0.03,
+    backgroundColor: 'white',
+    paddingHorizontal: width * 0.03,
+    paddingVertical: width * 0.015,
+    borderRadius: 8,
+    zIndex: 3,
+  },
+  locationLabel: {
+    fontFamily: 'EuclidSquare-Regular',
+    fontSize: width * 0.035,
+    color: '#1A1A2E',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: width * 0.05,
+  },
+  errorText: {
+    fontSize: width * 0.04,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#dc3545',
+    textAlign: 'center',
+    marginBottom: width * 0.03,
+  },
+  retryButton: {
+    backgroundColor: '#00B383',
+    paddingHorizontal: width * 0.05,
+    paddingVertical: width * 0.02,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontFamily: 'EuclidSquare-Medium',
+    fontSize: width * 0.04,
+  },
+});
+
+export default LocationSelectionScreen;
