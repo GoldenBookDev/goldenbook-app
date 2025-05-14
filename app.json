@@ -26,27 +26,24 @@
           "locationAlwaysPermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos incluso cuando la app está en segundo plano.",
           "locationWhenInUsePermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos."
         }
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.bwebstudio.goldenbook"
+        }
       ]
     ],
     "ios": {
       "bundleIdentifier": "com.bwebstudio.goldenbook",
-      "config": {
-        "googleSignIn": {
-          "reservedClientId": "1659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com"
-        }
-      },
+      "googleServicesFile": "./GoogleService-Info.plist",
       "supportsTablet": true
     },
     "android": {
       "package": "com.bwebstudio.goldenbook",
-      "config": {
-        "googleSignIn": {
-          "certificateHash": "3C0C146EF596A87719E971EC79A45EE6E2BB2274"
-        },
-        "googleMaps": {
-          "apiKey": "AIzaSyDTPKWJrmWJBhCPRV0CEIweYGVtdeDLATE"
-        }
-      },
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
