@@ -25,31 +25,6 @@
           "locationAlwaysPermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos incluso cuando la app está en segundo plano.",
           "locationWhenInUsePermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos."
         }
-      ],
-      [
-        "@react-native-firebase/app"
-      ],
-      [
-        "@react-native-firebase/auth"
-      ],
-      [
-        "react-native-app-auth",
-        {
-          "android": {
-            "serviceConfigurationAndroid": {
-              "googleConfiguration": {
-                "redirectUrl": "com.bwebstudio.goldenbook:/oauth2redirect/google"
-              }
-            }
-          },
-          "ios": {
-            "serviceConfigurationIOS": {
-              "googleConfiguration": {
-                "redirectUrl": "com.bwebstudio.goldenbook:/oauth2redirect/google"
-              }
-            }
-          }
-        }
       ]
     ],
     "ios": {

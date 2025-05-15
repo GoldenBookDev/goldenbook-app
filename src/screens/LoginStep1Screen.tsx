@@ -1,3 +1,6 @@
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -10,23 +13,80 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { authorize } from 'react-native-app-auth';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 import { isValidEmail } from '../utils/validation';
+
+// Registra la finalización de la sesión web
+WebBrowser.maybeCompleteAuthSession();
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  
+  // Configuración de la solicitud de autenticación de Google corregida
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: Platform.select({
+      ios: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
+      android: '659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com',
+      web: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
+    }) || '',
+    scopes: ['profile', 'email']
+  });
 
   // Validación de email
   useEffect(() => {
     setIsEmailValid(isValidEmail(email));
   }, [email]);
 
-  // Continuar con email y contraseña
+  // Manejar la respuesta de autenticación
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      
+      // Esta vez usamos un enfoque con más registros de log para depuración
+      console.log('Success response received');
+      
+      if (authentication) {
+        console.log('Authentication received', !!authentication.accessToken);
+        
+        // Crear credencial de Firebase con el token de acceso
+        const credential = GoogleAuthProvider.credential(
+          null,
+          authentication.accessToken
+        );
+        
+        console.log('Credential created, signing in...');
+        
+        // Iniciar sesión con Firebase
+        signInWithCredential(auth, credential)
+          .then((result) => {
+            console.log('Sign in successful!');
+            console.log('User: ', result.user.displayName);
+            
+            Alert.alert(
+              'Login exitoso',
+              `Bienvenido ${result.user.displayName || result.user.email}`
+            );
+            
+            navigation.navigate('LocationSelection');
+          })
+          .catch((error) => {
+            console.error('Firebase sign in error:', error);
+            setAuthError(error.message);
+            Alert.alert('Error', error.message);
+          });
+      } else {
+        console.error('No authentication data received');
+        setAuthError('Failed to authenticate with Google');
+      }
+    } else if (response?.type === 'error') {
+      console.error('Google auth error:', response.error);
+      setAuthError(response.error?.message || 'Error al autenticar con Google');
+    }
+  }, [response, navigation]);
+
+  // Continuar con email
   const handleContinue = () => {
     if (!isEmailValid) {
       Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
@@ -35,64 +95,17 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     navigation.navigate('LoginStep2', { email });
   };
 
-  // Configuración para Google OAuth
-  const googleConfig = {
-    issuer: 'https://accounts.google.com',
-    clientId: Platform.select({
-      ios: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
-      android: '659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com',
-    }) || '',
-    redirectUrl: Platform.select({
-      ios: 'com.bwebstudio.goldenbook:/oauth2redirect/google',
-      android: 'com.bwebstudio.goldenbook:/oauth2redirect/google',
-    }) || '',
-    scopes: ['openid', 'profile', 'email'],
-  };
-
-  // Función para autenticar con Google
-  const signInWithGoogle = async () => {
+  // Función para iniciar la autenticación de Google
+  const handleGoogleSignIn = async () => {
+    setAuthError(null);
+    console.log('Iniciar autenticación con Google');
+    
     try {
-      setIsAuthenticating(true);
-      setAuthError(null);
-      
-      console.log('Iniciando autenticación con Google...');
-      console.log('Configuración:', googleConfig);
-      
-      // Autorizar usando react-native-app-auth
-      const result = await authorize(googleConfig);
-      
-      console.log('Autorización exitosa, recibidos tokens');
-      
-      // Crear credencial de Firebase con el idToken
-      const { idToken } = result;
-      
-      if (!idToken) {
-        throw new Error('No se pudo obtener el token de ID');
-      }
-      
-      console.log('Creando credencial de Firebase...');
-      const credential = GoogleAuthProvider.credential(idToken);
-      
-      // Iniciar sesión con Firebase
-      console.log('Iniciando sesión en Firebase...');
-      const userCredential = await signInWithCredential(auth, credential);
-      
-      console.log('Inicio de sesión exitoso:', userCredential.user.displayName);
-      
-      Alert.alert(
-        'Login exitoso',
-        `Bienvenido ${userCredential.user.displayName || userCredential.user.email}`
-      );
-      
-      // Navegar a la pantalla principal
-      navigation.navigate('LocationSelection');
-      
+      await promptAsync();
     } catch (error: any) {
-      console.error('Error en la autenticación:', error);
-      setAuthError(error.message || 'Error desconocido');
-      Alert.alert('Error de autenticación', error.message || 'Ocurrió un error durante la autenticación');
-    } finally {
-      setIsAuthenticating(false);
+      console.error('Error initiating Google sign in:', error);
+      setAuthError(error.message);
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -140,17 +153,15 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
       {/* Botón de Google */}
       <TouchableOpacity
         style={styles.googleButton}
-        onPress={signInWithGoogle}
-        disabled={isAuthenticating}
+        onPress={handleGoogleSignIn}
+        disabled={!request}
       >
         <View style={styles.googleContent}>
           <Image
             source={require('../assets/google-icon.png')}
             style={styles.googleIcon}
           />
-          <Text style={styles.googleButtonText}>
-            {isAuthenticating ? 'Connecting...' : 'Continue with Google'}
-          </Text>
+          <Text style={styles.googleButtonText}>Continue with Google</Text>
         </View>
       </TouchableOpacity>
 
@@ -172,7 +183,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 };
 
-// Estilos (mantén los estilos originales)
+// Estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
