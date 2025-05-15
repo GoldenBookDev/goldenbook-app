@@ -1,6 +1,5 @@
-import * as Google from 'expo-auth-session/providers/google';
+// LoginStep1Screen.tsx
 import * as WebBrowser from 'expo-web-browser';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -13,80 +12,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { auth } from '../config/firebaseConfig';
 import { isValidEmail } from '../utils/validation';
 
-// Registra la finalización de la sesión web
+// Registra el resultado del navegador web
 WebBrowser.maybeCompleteAuthSession();
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  
-  // Configuración de la solicitud de autenticación de Google corregida
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: Platform.select({
-      ios: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
-      android: '659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com',
-      web: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
-    }) || '',
-    scopes: ['profile', 'email']
-  });
 
   // Validación de email
   useEffect(() => {
     setIsEmailValid(isValidEmail(email));
   }, [email]);
 
-  // Manejar la respuesta de autenticación
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-      
-      // Esta vez usamos un enfoque con más registros de log para depuración
-      console.log('Success response received');
-      
-      if (authentication) {
-        console.log('Authentication received', !!authentication.accessToken);
-        
-        // Crear credencial de Firebase con el token de acceso
-        const credential = GoogleAuthProvider.credential(
-          null,
-          authentication.accessToken
-        );
-        
-        console.log('Credential created, signing in...');
-        
-        // Iniciar sesión con Firebase
-        signInWithCredential(auth, credential)
-          .then((result) => {
-            console.log('Sign in successful!');
-            console.log('User: ', result.user.displayName);
-            
-            Alert.alert(
-              'Login exitoso',
-              `Bienvenido ${result.user.displayName || result.user.email}`
-            );
-            
-            navigation.navigate('LocationSelection');
-          })
-          .catch((error) => {
-            console.error('Firebase sign in error:', error);
-            setAuthError(error.message);
-            Alert.alert('Error', error.message);
-          });
-      } else {
-        console.error('No authentication data received');
-        setAuthError('Failed to authenticate with Google');
-      }
-    } else if (response?.type === 'error') {
-      console.error('Google auth error:', response.error);
-      setAuthError(response.error?.message || 'Error al autenticar con Google');
-    }
-  }, [response, navigation]);
-
-  // Continuar con email
+  // Continuar con email y contraseña
   const handleContinue = () => {
     if (!isEmailValid) {
       Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
@@ -95,30 +35,22 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     navigation.navigate('LoginStep2', { email });
   };
 
-  // Función para iniciar la autenticación de Google
-  const handleGoogleSignIn = async () => {
-    setAuthError(null);
-    console.log('Iniciar autenticación con Google');
-    
-    try {
-      await promptAsync();
-    } catch (error: any) {
-      console.error('Error initiating Google sign in:', error);
-      setAuthError(error.message);
-      Alert.alert('Error', error.message);
-    }
+  // Autenticación con Google deshabilitada temporalmente
+  const handleGoogleSignIn = () => {
+    Alert.alert(
+      'Autenticación con Google temporalmente deshabilitada',
+      'Por favor, utiliza el método de correo electrónico y contraseña o continúa como invitado mientras resolvemos este problema.'
+    );
+  };
+
+  // Continuar como invitado
+  const continueAsGuest = () => {
+    navigation.navigate('LocationSelection');
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log in or sign up</Text>
-      
-      {/* Mostrar error de autenticación si existe */}
-      {authError && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{authError}</Text>
-        </View>
-      )}
       
       {/* Input de email */}
       <TextInput
@@ -150,18 +82,17 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <View style={styles.line} />
       </View>
 
-      {/* Botón de Google */}
+      {/* Botón de Google (deshabilitado temporalmente) */}
       <TouchableOpacity
-        style={styles.googleButton}
+        style={[styles.googleButton, { opacity: 0.5 }]}
         onPress={handleGoogleSignIn}
-        disabled={!request}
       >
         <View style={styles.googleContent}>
           <Image
             source={require('../assets/google-icon.png')}
             style={styles.googleIcon}
           />
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
+          <Text style={styles.googleButtonText}>Continue with Google (maintenance)</Text>
         </View>
       </TouchableOpacity>
 
@@ -175,7 +106,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
       
       <TouchableOpacity
         style={styles.linkContainer}
-        onPress={() => navigation.navigate('LocationSelection')}
+        onPress={continueAsGuest}
       >
         <Text style={styles.link}>Continue without an account</Text>
       </TouchableOpacity>
@@ -183,7 +114,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 };
 
-// Estilos
+// Mantén los estilos originales...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -196,17 +127,6 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-SemiBold',
     textAlign: 'center',
     marginBottom: '5%',
-  },
-  errorContainer: {
-    backgroundColor: '#FFEEEE',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  errorText: {
-    color: '#E53935',
-    fontSize: Dimensions.get('window').width * 0.035,
-    fontFamily: 'EuclidSquare-Regular',
   },
   input: {
     borderWidth: 1,
