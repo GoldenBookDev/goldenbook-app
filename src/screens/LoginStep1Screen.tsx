@@ -1,6 +1,3 @@
-import * as AuthSession from 'expo-auth-session';
-import * as Google from 'expo-auth-session/providers/google';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -13,64 +10,108 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { authorize } from 'react-native-app-auth';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
-import { isValidEmail } from '../utils/validation'; // Importar validación
+import { isValidEmail } from '../utils/validation';
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: Platform.select({
-      ios: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
-      android: '659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com',
-      web: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
-    }),
-    ...(Platform.OS !== 'web' && {
-      expoClientId: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
-    }),
-    redirectUri: AuthSession.makeRedirectUri({
-      useProxy: true,
-    } as AuthSession.AuthSessionRedirectUriOptions),
-  });
-
+  // Validación de email
   useEffect(() => {
-    setIsEmailValid(isValidEmail(email)); // Actualiza el estado según la validación
+    setIsEmailValid(isValidEmail(email));
   }, [email]);
 
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then((userCredential) => {
-          Alert.alert(
-            'Login exitoso',
-            `Bienvenido ${userCredential.user.displayName}`
-          );
-          navigation.navigate('LocationSelection');
-        })
-        .catch((error) => {
-          Alert.alert('Error', error.message);
-        });
-    }
-  }, [response]);
-
+  // Continuar con email y contraseña
   const handleContinue = () => {
     if (!isEmailValid) {
-      alert('Please enter a valid email');
+      Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
       return;
     }
     navigation.navigate('LoginStep2', { email });
   };
 
+  // Configuración para Google OAuth
+  const googleConfig = {
+    issuer: 'https://accounts.google.com',
+    clientId: Platform.select({
+      ios: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
+      android: '659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com',
+    }) || '',
+    redirectUrl: Platform.select({
+      ios: 'com.bwebstudio.goldenbook:/oauth2redirect/google',
+      android: 'com.bwebstudio.goldenbook:/oauth2redirect/google',
+    }) || '',
+    scopes: ['openid', 'profile', 'email'],
+  };
+
+  // Función para autenticar con Google
+  const signInWithGoogle = async () => {
+    try {
+      setIsAuthenticating(true);
+      setAuthError(null);
+      
+      console.log('Iniciando autenticación con Google...');
+      console.log('Configuración:', googleConfig);
+      
+      // Autorizar usando react-native-app-auth
+      const result = await authorize(googleConfig);
+      
+      console.log('Autorización exitosa, recibidos tokens');
+      
+      // Crear credencial de Firebase con el idToken
+      const { idToken } = result;
+      
+      if (!idToken) {
+        throw new Error('No se pudo obtener el token de ID');
+      }
+      
+      console.log('Creando credencial de Firebase...');
+      const credential = GoogleAuthProvider.credential(idToken);
+      
+      // Iniciar sesión con Firebase
+      console.log('Iniciando sesión en Firebase...');
+      const userCredential = await signInWithCredential(auth, credential);
+      
+      console.log('Inicio de sesión exitoso:', userCredential.user.displayName);
+      
+      Alert.alert(
+        'Login exitoso',
+        `Bienvenido ${userCredential.user.displayName || userCredential.user.email}`
+      );
+      
+      // Navegar a la pantalla principal
+      navigation.navigate('LocationSelection');
+      
+    } catch (error: any) {
+      console.error('Error en la autenticación:', error);
+      setAuthError(error.message || 'Error desconocido');
+      Alert.alert('Error de autenticación', error.message || 'Ocurrió un error durante la autenticación');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log in or sign up</Text>
+      
+      {/* Mostrar error de autenticación si existe */}
+      {authError && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{authError}</Text>
+        </View>
+      )}
+      
+      {/* Input de email */}
       <TextInput
         style={[
           styles.input,
-          { borderColor: isEmailValid ? '#ADB5BD' : '#FF4D4F' }, // Cambia el borde si es inválido
+          { borderColor: isEmailValid ? '#ADB5BD' : '#FF4D4F' },
         ]}
         placeholder="Email"
         placeholderTextColor="#6C757D"
@@ -79,6 +120,8 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
       />
+      
+      {/* Botón para continuar con email */}
       <TouchableOpacity
         style={[styles.button, !isEmailValid && styles.disabledButton]}
         onPress={handleContinue}
@@ -87,31 +130,38 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <Text style={styles.buttonText}>Continue</Text>
       </TouchableOpacity>
 
+      {/* Separador */}
       <View style={styles.dividerContainer}>
         <View style={styles.line} />
         <Text style={styles.dividerText}>or</Text>
         <View style={styles.line} />
       </View>
 
+      {/* Botón de Google */}
       <TouchableOpacity
         style={styles.googleButton}
-        onPress={() => promptAsync()}
+        onPress={signInWithGoogle}
+        disabled={isAuthenticating}
       >
         <View style={styles.googleContent}>
           <Image
             source={require('../assets/google-icon.png')}
             style={styles.googleIcon}
           />
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
+          <Text style={styles.googleButtonText}>
+            {isAuthenticating ? 'Connecting...' : 'Continue with Google'}
+          </Text>
         </View>
       </TouchableOpacity>
 
+      {/* Enlaces adicionales */}
       <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>Don’t have an account? </Text>
+        <Text style={styles.signupText}>Don't have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.signupLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
+      
       <TouchableOpacity
         style={styles.linkContainer}
         onPress={() => navigation.navigate('LocationSelection')}
@@ -122,6 +172,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 };
 
+// Estilos (mantén los estilos originales)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -134,6 +185,17 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-SemiBold',
     textAlign: 'center',
     marginBottom: '5%',
+  },
+  errorContainer: {
+    backgroundColor: '#FFEEEE',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  errorText: {
+    color: '#E53935',
+    fontSize: Dimensions.get('window').width * 0.035,
+    fontFamily: 'EuclidSquare-Regular',
   },
   input: {
     borderWidth: 1,

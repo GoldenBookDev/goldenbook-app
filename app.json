@@ -12,30 +12,46 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "plugins": [
-  [
-    "expo-location",
-    {
-      "locationAlwaysAndWhenInUsePermission": "Goldenbook necesita acceder a tu ubicación para mostrarte lugares cercanos.",
-      "locationAlwaysPermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos incluso cuando la app está en segundo plano.",
-      "locationWhenInUsePermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos."
-    }
-  ],
-  "@react-native-firebase/app",
-  "@react-native-firebase/auth",
-  [
-    "@react-native-google-signin/google-signin",
-    {
-      "iosUrlScheme": "com.googleusercontent.apps.659096031354-gl59hae39tch43jsq8oefud2fcrvgd61"
-    }
-  ]
-],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Goldenbook necesita acceder a tu ubicación para mostrarte lugares cercanos.",
+          "locationAlwaysPermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos incluso cuando la app está en segundo plano.",
+          "locationWhenInUsePermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos."
+        }
+      ],
+      [
+        "@react-native-firebase/app"
+      ],
+      [
+        "@react-native-firebase/auth"
+      ],
+      [
+        "react-native-app-auth",
+        {
+          "android": {
+            "serviceConfigurationAndroid": {
+              "googleConfiguration": {
+                "redirectUrl": "com.bwebstudio.goldenbook:/oauth2redirect/google"
+              }
+            }
+          },
+          "ios": {
+            "serviceConfigurationIOS": {
+              "googleConfiguration": {
+                "redirectUrl": "com.bwebstudio.goldenbook:/oauth2redirect/google"
+              }
+            }
+          }
+        }
+      ]
+    ],
     "ios": {
       "bundleIdentifier": "com.bwebstudio.goldenbook",
       "googleServicesFile": "./GoogleService-Info.plist",
