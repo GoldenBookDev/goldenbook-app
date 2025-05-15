@@ -31,7 +31,7 @@ import SwimmerIcon from '../assets/images/icons/swimmer.svg';
 import ThumbIcon from '../assets/images/icons/thumb.svg';
 
 // Import SideMenu component
-import MenuController from '../components/MenuController';
+import SideMenu from '../components/SideMenu';
 import SearchBar from '../components/SearchBar';
 import SearchDropdown from '../components/SearchDropdown';
 import { searchEstablishmentsByName } from '../utils/searchUtils';
@@ -376,8 +376,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Menu Controller */}
-      <MenuController 
+      {/* Side Menu */}
+      <SideMenu 
         visible={menuVisible} 
         onClose={() => setMenuVisible(false)} 
         navigation={navigation} 

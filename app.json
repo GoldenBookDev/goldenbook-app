@@ -12,6 +12,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -29,12 +30,23 @@
     ],
     "ios": {
       "bundleIdentifier": "com.bwebstudio.goldenbook",
-      "googleServicesFile": "./GoogleService-Info.plist",
+      "config": {
+        "googleSignIn": {
+          "reservedClientId": "1659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com"
+        }
+      },
       "supportsTablet": true
     },
     "android": {
       "package": "com.bwebstudio.goldenbook",
-      "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleSignIn": {
+          "certificateHash": "3C0C146EF596A87719E971EC79A45EE6E2BB2274"
+        },
+        "googleMaps": {
+          "apiKey": "AIzaSyDTPKWJrmWJBhCPRV0CEIweYGVtdeDLATE"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

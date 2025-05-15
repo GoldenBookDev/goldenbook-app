@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Animated,
   Dimensions,
@@ -21,7 +21,6 @@ import HeartIcon from '../assets/images/icons/heart.svg';
 import LogoutIcon from '../assets/images/icons/logout.svg';
 import SettingsIcon from '../assets/images/icons/settings.svg';
 import UserIcon from '../assets/images/icons/user.svg';
-import LoginIcon from '../assets/images/icons/login.svg'; 
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,44 +30,8 @@ interface SideMenuProps {
   navigation: any;
 }
 
-interface UserData {
-  displayName: string | null;
-  email: string | null;
-  photoURL: string | null;
-  isGuest?: boolean;
-}
-
 const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => {
   const slideAnim = React.useRef(new Animated.Value(-width)).current;
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Check authentication status when component mounts
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        setIsLoading(true);
-        const userDataString = await AsyncStorage.getItem('@goldenbook_user_data');
-        const token = await AsyncStorage.getItem('@goldenbook_auth_token');
-        
-        if (userDataString && token) {
-          const parsedUserData = JSON.parse(userDataString);
-          setUserData(parsedUserData);
-        } else {
-          // User is not logged in or is a guest
-          setUserData({ displayName: null, email: null, photoURL: null, isGuest: true });
-        }
-      } catch (error) {
-        console.error('Error fetching auth status:', error);
-        // Default to guest mode on error
-        setUserData({ displayName: null, email: null, photoURL: null, isGuest: true });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuthStatus();
-  }, [visible]); // Re-check when menu becomes visible
 
   React.useEffect(() => {
     if (visible) {
@@ -100,7 +63,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
     }
   };
 
-  const authenticatedMenuItems = [
+  const menuItems = [
     {
       id: 'profile',
       title: 'My Profile',
@@ -127,90 +90,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
     },
   ];
 
-  const guestMenuItems = [
-    {
-      id: 'login',
-      title: 'Sign In',
-      icon: LoginIcon,
-      onPress: () => {
-        onClose();
-        navigation.navigate('LoginStep1Screen');
-      },
-    },
-    {
-      id: 'register',
-      title: 'Create Account',
-      icon: UserIcon,
-      onPress: () => {
-        onClose();
-        navigation.navigate('RegisterScreen'); // Adjust the screen name as needed
-      },
-    },
-    {
-      id: 'settings',
-      title: 'Settings',
-      icon: SettingsIcon,
-      onPress: () => navigation.navigate('SettingsScreen'),
-    },
-  ];
-
-  // Render authenticated user profile section
-  const renderAuthenticatedProfile = () => (
-    <View style={styles.userInfoContainer}>
-      <View style={styles.userAvatar}>
-        <Image 
-          source={
-            userData?.photoURL 
-              ? { uri: userData.photoURL } 
-              : require('../assets/images/default-avatar.png')
-          } 
-          style={styles.avatarImage} 
-        />
-      </View>
-      <Text style={styles.userName}>{userData?.displayName || 'User'}</Text>
-      <Text style={styles.userEmail}>{userData?.email || ''}</Text>
-      <TouchableOpacity 
-        style={styles.editProfileButton}
-        onPress={() => {
-          onClose();
-          navigation.navigate('ProfileScreen');
-        }}
-      >
-        <Text style={styles.editProfileText}>Edit Profile</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  // Render guest welcome section
-  const renderGuestProfile = () => (
-    <View style={styles.guestInfoContainer}>
-      <View style={styles.userAvatar}>
-        <Image 
-          source={require('../assets/images/default-avatar.png')} 
-          style={styles.avatarImage} 
-        />
-      </View>
-      <Text style={styles.userName}>Welcome, Guest</Text>
-      <Text style={styles.guestMessage}>Sign in to access all features</Text>
-      <TouchableOpacity 
-        style={styles.loginButton}
-        onPress={() => {
-          onClose();
-          navigation.navigate('LoginStep1Screen');
-        }}
-      >
-        <Text style={styles.loginButtonText}>Sign In</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  // Determine which menu items to show
-  const menuItems = userData?.isGuest ? guestMenuItems : authenticatedMenuItems;
-
-  if (isLoading) {
-    return null; // Or render a loading indicator
-  }
-
   return (
     <Modal
       transparent
@@ -232,8 +111,25 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
               </TouchableOpacity>
             </View>
 
-            {/* Conditional rendering based on auth status */}
-            {userData?.isGuest ? renderGuestProfile() : renderAuthenticatedProfile()}
+            <View style={styles.userInfoContainer}>
+              <View style={styles.userAvatar}>
+                <Image 
+                  source={require('../assets/images/default-avatar.png')} 
+                  style={styles.avatarImage} 
+                />
+              </View>
+              <Text style={styles.userName}>John Doe</Text>
+              <Text style={styles.userEmail}>john.doe@example.com</Text>
+              <TouchableOpacity 
+                style={styles.editProfileButton}
+                onPress={() => {
+                  onClose();
+                  navigation.navigate('ProfileScreen');
+                }}
+              >
+                <Text style={styles.editProfileText}>Edit Profile</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.menuItems}>
               {menuItems.map((item) => (
@@ -255,12 +151,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
             </View>
 
             <View style={styles.footer}>
-              {!userData?.isGuest && (
-                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                  <LogoutIcon width={width * 0.06} height={width * 0.06}/>
-                  <Text style={styles.logoutText}>Log Out</Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <LogoutIcon width={width * 0.06} height={width * 0.06}/>
+                <Text style={styles.logoutText}>Log Out</Text>
+              </TouchableOpacity>
               <Text style={styles.versionText}>Version 1.0.0</Text>
             </View>
           </SafeAreaView>
@@ -307,17 +201,11 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F0F0F0',
     marginBottom: width * 0.04,
   },
-  guestInfoContainer: {
-    alignItems: 'center',
-    padding: width * 0.04,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    marginBottom: width * 0.04,
-  },
   userAvatar: {
     width: width * 0.2,
     height: width * 0.2,
     borderRadius: (width * 0.2) / 2,
+    //backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: width * 0.03,
@@ -340,12 +228,6 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     marginBottom: width * 0.03,
   },
-  guestMessage: {
-    fontSize: width * 0.035,
-    fontFamily: 'EuclidSquare-Regular',
-    color: '#6C757D',
-    marginBottom: width * 0.03,
-  },
   editProfileButton: {
     paddingVertical: width * 0.02,
     paddingHorizontal: width * 0.04,
@@ -356,17 +238,6 @@ const styles = StyleSheet.create({
     fontSize: width * 0.035,
     fontFamily: 'EuclidSquare-Medium',
     color: '#1A1A2E',
-  },
-  loginButton: {
-    paddingVertical: width * 0.02,
-    paddingHorizontal: width * 0.04,
-    backgroundColor: '#E8A756', // Golden color to match your theme
-    borderRadius: 50,
-  },
-  loginButtonText: {
-    fontSize: width * 0.035,
-    fontFamily: 'EuclidSquare-Medium',
-    color: '#FFFFFF',
   },
   menuItems: {
     flex: 1,

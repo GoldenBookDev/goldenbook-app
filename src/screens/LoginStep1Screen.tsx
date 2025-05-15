@@ -1,5 +1,6 @@
-// LoginStep1Screen.tsx
-import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -12,51 +13,64 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { isValidEmail } from '../utils/validation';
-
-// Registra el resultado del navegador web
-WebBrowser.maybeCompleteAuthSession();
+import { auth } from '../config/firebaseConfig';
+import { isValidEmail } from '../utils/validation'; // Importar validación
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(false);
 
-  // Validación de email
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: Platform.select({
+      ios: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
+      android: '659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com',
+      web: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
+    }),
+    ...(Platform.OS !== 'web' && {
+      expoClientId: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
+    }),
+    redirectUri: AuthSession.makeRedirectUri({
+      useProxy: true,
+    } as AuthSession.AuthSessionRedirectUriOptions),
+  });
+
   useEffect(() => {
-    setIsEmailValid(isValidEmail(email));
+    setIsEmailValid(isValidEmail(email)); // Actualiza el estado según la validación
   }, [email]);
 
-  // Continuar con email y contraseña
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential)
+        .then((userCredential) => {
+          Alert.alert(
+            'Login exitoso',
+            `Bienvenido ${userCredential.user.displayName}`
+          );
+          navigation.navigate('LocationSelection');
+        })
+        .catch((error) => {
+          Alert.alert('Error', error.message);
+        });
+    }
+  }, [response]);
+
   const handleContinue = () => {
     if (!isEmailValid) {
-      Alert.alert('Error', 'Por favor ingresa un correo electrónico válido');
+      alert('Please enter a valid email');
       return;
     }
     navigation.navigate('LoginStep2', { email });
   };
 
-  // Autenticación con Google deshabilitada temporalmente
-  const handleGoogleSignIn = () => {
-    Alert.alert(
-      'Autenticación con Google temporalmente deshabilitada',
-      'Por favor, utiliza el método de correo electrónico y contraseña o continúa como invitado mientras resolvemos este problema.'
-    );
-  };
-
-  // Continuar como invitado
-  const continueAsGuest = () => {
-    navigation.navigate('LocationSelection');
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log in or sign up</Text>
-      
-      {/* Input de email */}
       <TextInput
         style={[
           styles.input,
-          { borderColor: isEmailValid ? '#ADB5BD' : '#FF4D4F' },
+          { borderColor: isEmailValid ? '#ADB5BD' : '#FF4D4F' }, // Cambia el borde si es inválido
         ]}
         placeholder="Email"
         placeholderTextColor="#6C757D"
@@ -65,8 +79,6 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         value={email}
         onChangeText={setEmail}
       />
-      
-      {/* Botón para continuar con email */}
       <TouchableOpacity
         style={[styles.button, !isEmailValid && styles.disabledButton]}
         onPress={handleContinue}
@@ -75,38 +87,34 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <Text style={styles.buttonText}>Continue</Text>
       </TouchableOpacity>
 
-      {/* Separador */}
       <View style={styles.dividerContainer}>
         <View style={styles.line} />
         <Text style={styles.dividerText}>or</Text>
         <View style={styles.line} />
       </View>
 
-      {/* Botón de Google (deshabilitado temporalmente) */}
       <TouchableOpacity
-        style={[styles.googleButton, { opacity: 0.5 }]}
-        onPress={handleGoogleSignIn}
+        style={styles.googleButton}
+        onPress={() => promptAsync()}
       >
         <View style={styles.googleContent}>
           <Image
             source={require('../assets/google-icon.png')}
             style={styles.googleIcon}
           />
-          <Text style={styles.googleButtonText}>Continue with Google (maintenance)</Text>
+          <Text style={styles.googleButtonText}>Continue with Google</Text>
         </View>
       </TouchableOpacity>
 
-      {/* Enlaces adicionales */}
       <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>Don't have an account? </Text>
+        <Text style={styles.signupText}>Don’t have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
           <Text style={styles.signupLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
-      
       <TouchableOpacity
         style={styles.linkContainer}
-        onPress={continueAsGuest}
+        onPress={() => navigation.navigate('LocationSelection')}
       >
         <Text style={styles.link}>Continue without an account</Text>
       </TouchableOpacity>
@@ -114,7 +122,6 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   );
 };
 
-// Mantén los estilos originales...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
