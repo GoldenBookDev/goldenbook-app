@@ -14,19 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "659096031354-4qr5hh4jrvk56oqsqk8bpia4uakqmmln.apps.googleusercontent.com",
+          "client_id": "659096031354-rkpvbl0neg4kusuvvq0gijio5jlhc8tl.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.bwebstudio.goldenbook",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
-          }
-        },
-        {
-          "client_id": "659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.bwebstudio.goldenbook",
-            "certificate_hash": "3c0c146ef596a87719e971ec79a45ee6e2bb2274"
+            "certificate_hash": "12b8fce8267aa26cf60b36d8bbf0a934fae01086"
           }
         },
         {
@@ -36,7 +28,7 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAsDiAOD3n6QJtvbbwv8Y16guzjkFROUFI"
+          "current_key": "AIzaSyCeWEBIzPHaNv_6LSFUfQFJatH85uwoMgg"
         }
       ],
       "services": {

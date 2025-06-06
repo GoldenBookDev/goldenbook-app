@@ -12,6 +12,7 @@ import {
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { resetPassword } from '../services/authService'; // Importa el servicio de autenticación
 import { isValidEmail } from '../utils/validation'; // Importar la validación
+import i18n from '../i18n'; // Importar i18n
 
 type ResetPasswordProps = NativeStackScreenProps<
   RootStackParamList,
@@ -22,22 +23,22 @@ const ResetPasswordScreen: React.FC<ResetPasswordProps> = ({
   navigation,
 }) => {
   const [email, setEmail] = useState('');
-  const [isEmailValid, setIsEmailValid] = useState(false); // Validación del email
+  const [isEmailValid, setIsEmailValid] = useState(false);
 
   useEffect(() => {
-    setIsEmailValid(isValidEmail(email)); // Actualiza la validación del email
+    setIsEmailValid(isValidEmail(email));
   }, [email]);
 
   const handleSendResetLink = async () => {
     if (!isEmailValid) {
-      alert('Please enter a valid email');
+      alert(i18n.t('auth.enterValidEmail'));
       return;
     }
 
     try {
-      await resetPassword(email); // Usa el servicio de autenticación
+      await resetPassword(email);
       alert('Reset link sent to your email');
-      navigation.goBack(); // Vuelve a la pantalla anterior
+      navigation.goBack();
     } catch (error: any) {
       alert(error.message);
     }
@@ -45,7 +46,6 @@ const ResetPasswordScreen: React.FC<ResetPasswordProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Botón de retroceso */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -53,19 +53,17 @@ const ResetPasswordScreen: React.FC<ResetPasswordProps> = ({
         <Ionicons name="arrow-back" size={24} color="#495057" />
       </TouchableOpacity>
 
-      {/* Contenido */}
-      <Text style={styles.title}>Reset password</Text>
+      <Text style={styles.title}>{i18n.t('auth.resetPassword')}</Text>
       <Text style={styles.subText}>
-        We will send you an email with the link to reset your password. Enter
-        the email associated with your account.
+        {i18n.t('auth.resetPasswordSubtext')}
       </Text>
 
       <TextInput
         style={[
           styles.input,
-          { borderColor: isEmailValid ? '#CED4DA' : '#FF4D4F' }, // Cambia el borde según la validación
+          { borderColor: isEmailValid ? '#CED4DA' : '#FF4D4F' },
         ]}
-        placeholder="Email"
+        placeholder={i18n.t('auth.email')}
         placeholderTextColor="#6C757D"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -78,7 +76,7 @@ const ResetPasswordScreen: React.FC<ResetPasswordProps> = ({
         onPress={handleSendResetLink}
         disabled={!isEmailValid}
       >
-        <Text style={styles.buttonText}>SEND RESET LINK</Text>
+        <Text style={styles.buttonText}>{i18n.t('auth.sendResetLink')}</Text>
       </TouchableOpacity>
     </View>
   );

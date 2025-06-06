@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import i18n from '../i18n'; // Importar i18n
 
 // Import SVG components
 import ArrowRightIcon from '../assets/images/icons/arrow-right-bg.svg';
@@ -48,15 +49,15 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
   const menuItems = [
     {
       id: 'login',
-      title: 'Sign In',
+      title: i18n.t('menu.signIn'),
       icon: LoginIcon,
       onPress: () => navigation.navigate('LoginStep1'),
     },
     {
       id: 'register',
-      title: 'Create Account',
+      title: i18n.t('menu.createAccount'),
       icon: UserIcon,
-      onPress: () => navigation.navigate('Register'), // Adjust name as needed
+      onPress: () => navigation.navigate('Register'),
     },
   ];
 
@@ -88,8 +89,8 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
                   style={styles.avatarImage} 
                 />
               </View>
-              <Text style={styles.guestTitle}>Welcome to GoldenBook</Text>
-              <Text style={styles.guestSubtitle}>Sign in to access all features</Text>
+              <Text style={styles.guestTitle}>{i18n.t('menu.welcomeTitle')}</Text>
+              <Text style={styles.guestSubtitle}>{i18n.t('menu.welcomeSubtitle')}</Text>
               <View style={styles.authButtonsContainer}>
                 <TouchableOpacity 
                   style={[styles.authButton, styles.signInButton]}
@@ -98,16 +99,16 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
                     navigation.navigate('LoginStep1');
                   }}
                 >
-                  <Text style={styles.signInButtonText}>Sign In</Text>
+                  <Text style={styles.signInButtonText}>{i18n.t('menu.signIn')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.authButton, styles.registerButton]}
                   onPress={() => {
                     onClose();
-                    navigation.navigate('Register'); // Adjust name if needed
+                    navigation.navigate('Register');
                   }}
                 >
-                  <Text style={styles.registerButtonText}>Register</Text>
+                  <Text style={styles.registerButtonText}>{i18n.t('menu.register')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -132,7 +133,7 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
             </View>
 
             <View style={styles.footer}>
-              <Text style={styles.versionText}>Version 1.0.0</Text>
+              <Text style={styles.versionText}>{i18n.t('menu.version')}</Text>
             </View>
           </SafeAreaView>
         </Animated.View>

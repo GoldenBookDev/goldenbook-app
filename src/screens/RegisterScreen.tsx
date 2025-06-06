@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons'; // Íconos de ojo
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import CheckBox from 'expo-checkbox';
 import React, { useEffect, useState } from 'react';
@@ -12,8 +12,9 @@ import {
   View,
 } from 'react-native';
 import { RootStackParamList } from '../navigation/navigationTypes';
-import { registerUser } from '../services/authService'; // Importa authService
+import { registerUser } from '../services/authService';
 import { isValidEmail, isValidPassword } from '../utils/validation';
+import i18n from '../i18n'; // Importar i18n
 
 type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -29,14 +30,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
   useEffect(() => {
-    // Valida el email y actualiza el error
     if (email && !isValidEmail(email)) {
-      setEmailError('Please enter a valid email');
+      setEmailError(i18n.t('auth.enterValidEmail'));
     } else {
       setEmailError('');
     }
 
-    // Valida la contraseña y actualiza el error
     if (password && !isValidPassword(password)) {
       setPasswordError(
         'Password must be at least 8 characters long, include an uppercase letter, a lowercase letter, and a number.'
@@ -45,7 +44,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       setPasswordError('');
     }
 
-    // Valida la confirmación de contraseña
     if (confirmPassword && confirmPassword !== password) {
       setConfirmPasswordError('Passwords do not match');
     } else {
@@ -60,7 +58,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }
 
     try {
-      const user = await registerUser(email, password); // Usa authService para registrar
+      const user = await registerUser(email, password);
       Alert.alert(
         'Success',
         `Account created successfully! A verification email has been sent to ${user?.email}.`
@@ -73,13 +71,13 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Complete registration</Text>
+      <Text style={styles.title}>{i18n.t('auth.completeRegistration')}</Text>
       <TextInput
         style={[
           styles.input,
           { borderColor: emailError ? '#FF4D4F' : '#CED4DA' },
         ]}
-        placeholder="Email"
+        placeholder={i18n.t('auth.email')}
         placeholderTextColor="#6C757D"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -88,7 +86,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       />
       {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
       <Text style={styles.subText}>
-        We will send you an email to confirm your account
+        {i18n.t('auth.emailConfirmation')}
       </Text>
 
       <View style={styles.passwordContainer}>
@@ -97,7 +95,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             styles.input,
             { borderColor: passwordError ? '#FF4D4F' : '#CED4DA' },
           ]}
-          placeholder="Password"
+          placeholder={i18n.t('auth.password')}
           placeholderTextColor="#6C757D"
           secureTextEntry={!isPasswordVisible}
           value={password}
@@ -122,7 +120,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             styles.input,
             { borderColor: confirmPasswordError ? '#FF4D4F' : '#CED4DA' },
           ]}
-          placeholder="Confirm Password"
+          placeholder={i18n.t('auth.confirmPassword')}
           placeholderTextColor="#6C757D"
           secureTextEntry={!isConfirmPasswordVisible}
           value={confirmPassword}
@@ -146,9 +144,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       ) : null}
 
       <Text style={styles.termsText}>
-        By selecting Accept and continue, I accept the{' '}
-        <Text style={styles.linkText}>Terms and conditions</Text> and{' '}
-        <Text style={styles.linkText}>Privacy policy</Text> of Goldenbook.
+        {i18n.t('auth.termsAndConditions')}
       </Text>
 
       <TouchableOpacity
@@ -162,13 +158,11 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           !!(emailError || passwordError || confirmPasswordError || !email || !password || !confirmPassword)
         }
       >
-        <Text style={styles.buttonText}>ACCEPT AND CONTINUE</Text>
+        <Text style={styles.buttonText}>{i18n.t('auth.acceptAndContinue')}</Text>
       </TouchableOpacity>
 
       <Text style={styles.promotionText}>
-        Goldenbook will send you push notifications and promotional emails with
-        the most relevant recommendations and exclusive seasonal offers. You
-        can unsubscribe at any moment.
+        {i18n.t('auth.promotionalEmails')}
       </Text>
 
       <View style={styles.checkboxContainer}>
@@ -179,14 +173,14 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           style={styles.checkbox}
         />
         <Text style={styles.checkboxLabel}>
-          I don’t wish to receive commercial messages by Goldenbook
+          {i18n.t('auth.noCommercialMessages')}
         </Text>
       </View>
 
       <View style={styles.divider} />
 
       <TouchableOpacity onPress={() => navigation.navigate('LoginStep1')}>
-        <Text style={styles.link}>Already have an account? Log in</Text>
+        <Text style={styles.link}>{i18n.t('auth.alreadyHaveAccount')}</Text>
       </TouchableOpacity>
     </View>
   );

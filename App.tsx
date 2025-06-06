@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from './src/context/AuthContext';
-import AppNavigator from './src/navigation/AppNavigator'; // Tu navegador principal
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/context/AuthContext';
+import AppNavigator, { linking } from './src/navigation/AppNavigator'; // Importar linking
 
 // Impide que la pantalla de splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -49,7 +49,7 @@ export default function App() {
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <SafeAreaProvider>
         <AuthProvider>
-          <NavigationContainer>
+          <NavigationContainer linking={linking}>
             <AppNavigator />
           </NavigationContainer>
         </AuthProvider>

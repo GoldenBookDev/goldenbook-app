@@ -8,13 +8,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { Establishment } from '../services/firestoreService';
+import i18n from '../i18n'; // Importar i18n
 
 const { width } = Dimensions.get('window');
 
 interface SearchDropdownProps {
   results: Establishment[];
   onSelectEstablishment: (establishmentId: string) => void;
-  onShowAllResults?: () => void; // Prop opcional para el botón "Ver todos"
+  onShowAllResults?: () => void;
   visible: boolean;
 }
 
@@ -28,16 +29,14 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
     return null;
   }
 
-  // Solo mostrar los primeros 5 resultados como máximo
   const limitedResults = results.slice(0, 5);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Sugerencias</Text>
+        <Text style={styles.headerText}>{i18n.t('search.suggestions')}</Text>
       </View>
       
-      {/* Usando ScrollView en lugar de FlatList para evitar el error de VirtualizedList anidado */}
       <ScrollView 
         style={styles.resultsContainer}
         keyboardShouldPersistTaps="handled"
@@ -59,13 +58,12 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
         ))}
       </ScrollView>
       
-      {/* Botón "Ver todos" los resultados */}
       {onShowAllResults && results.length > 0 && (
         <TouchableOpacity
           style={styles.showAllButton}
           onPress={onShowAllResults}
         >
-          <Text style={styles.showAllText}>Ver todos los resultados</Text>
+          <Text style={styles.showAllText}>{i18n.t('search.showAllResults')}</Text>
         </TouchableOpacity>
       )}
     </View>

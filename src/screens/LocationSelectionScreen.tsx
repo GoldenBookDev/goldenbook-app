@@ -12,7 +12,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import i18n from '../i18n';
 import { getLocations, Location } from '../services/firestoreService';
+import { getLocationImage, normalizeLocationId } from '../utils/imageMapping'; // Importar utilidad
 
 const { width } = Dimensions.get('window');
 
@@ -20,32 +22,37 @@ const LocationSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({});
-  const fadeAnims = useRef<{[key: string]: Animated.Value}>({});
+  const fadeAnims = useRef<{ [key: string]: Animated.Value }>({});
 
-  // Cargar ubicaciones desde Firestore
   useEffect(() => {
     const fetchLocations = async () => {
       try {
         setLoading(true);
         const locationsData = await getLocations();
-        
-        // Inicializar estados de carga de imágenes y animaciones
-        const initialLoadingStates: {[key: string]: boolean} = {};
-        const initialFadeAnims: {[key: string]: Animated.Value} = {};
-        
+
+        const initialFadeAnims: { [key: string]: Animated.Value } = {};
+
         locationsData.forEach(location => {
-          initialLoadingStates[location.id] = true;
           initialFadeAnims[location.id] = new Animated.Value(0);
         });
-        
-        setImageLoadingStates(initialLoadingStates);
+
         fadeAnims.current = initialFadeAnims;
-        
         setLocations(locationsData);
+
+        // Animar todas las imágenes después de un pequeño delay
+        setTimeout(() => {
+          locationsData.forEach(location => {
+            Animated.timing(fadeAnims.current[location.id], {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start();
+          });
+        }, 100);
+
       } catch (err) {
         console.error('Error fetching locations:', err);
-        setError('Failed to load locations. Please try again.');
+        setError(i18n.t('locationSelection.errorMessage'));
       } finally {
         setLoading(false);
       }
@@ -53,22 +60,6 @@ const LocationSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) 
 
     fetchLocations();
   }, []);
-
-  // Gestionar estado de carga de cada imagen y animar la aparición
-  const handleImageLoad = (locationId: string) => {
-    // Actualizar estado de carga
-    setImageLoadingStates(prevStates => ({
-      ...prevStates,
-      [locationId]: false
-    }));
-    
-    // Animar la aparición gradual
-    Animated.timing(fadeAnims.current[locationId], {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
 
   const handleLocationSelect = async (locationId: string) => {
     try {
@@ -87,14 +78,10 @@ const LocationSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) 
     setLoading(true);
   };
 
-  // Helper para obtener la mejor imagen según device
-  const getOptimalImageUrl = (location: Location) => {
-    // Usar thumbnail para vista de lista (carga más rápida)
-    if (location.imageVersions?.thumbnail) {
-      return location.imageVersions.thumbnail;
-    }
-    // Fallback a imagen original si no hay versiones
-    return location.image;
+  // Función para obtener imagen local
+  const getLocalImage = (location: Location) => {
+    const normalizedId = normalizeLocationId(location.name || location.id);
+    return getLocationImage(normalizedId, false); // false = usar medium en lugar de thumbnail
   };
 
   return (
@@ -102,27 +89,27 @@ const LocationSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) 
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#00B383" />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={styles.loadingText}>{i18n.t('locationSelection.loading')}</Text>
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.retryButton}
             onPress={handleRetry}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>{i18n.t('locationSelection.retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.headerContainer}>
-            <Text style={styles.title}>Select a location</Text>
+            <Text style={styles.title}>{i18n.t('locationSelection.selectLocation')}</Text>
             <Text style={styles.subtitle}>
-              Which location would you like to browse?
+              {i18n.t('locationSelection.selectLocationSubtitle')}
             </Text>
           </View>
 
@@ -135,31 +122,16 @@ const LocationSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) 
                 activeOpacity={0.8}
               >
                 <View style={styles.imageContainer}>
-                  {imageLoadingStates[location.id] && (
-                    <View style={styles.imagePlaceholder}>
-                      <ActivityIndicator size="small" color="#00B383" />
-                    </View>
-                  )}
-                  <Animated.View 
+                  <Animated.View
                     style={[
                       styles.imageWrapper,
                       { opacity: fadeAnims.current[location.id] || 0 }
                     ]}
                   >
-                    <Image 
-                      source={{ 
-                        uri: getOptimalImageUrl(location),
-                        cache: 'force-cache' // Usar cache agresivo para mejor performance
-                      }}
+                    <Image
+                      source={getLocalImage(location)} // Usar imagen local
                       style={styles.locationImage}
-                      onLoadStart={() => {
-                        setImageLoadingStates(prev => ({...prev, [location.id]: true}));
-                      }}
-                      onLoadEnd={() => handleImageLoad(location.id)}
-                      onError={(e) => {
-                        console.log(`Error loading image for ${location.name}:`, e.nativeEvent.error);
-                        handleImageLoad(location.id); // Mostrar aunque falle
-                      }}
+                    // Ya no necesitamos onLoadStart, onLoadEnd ni onError
                     />
                   </Animated.View>
                 </View>
@@ -175,6 +147,7 @@ const LocationSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) 
   );
 };
 
+// Styles permanecen igual, pero puedes eliminar imagePlaceholder ya que no es necesario
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -229,22 +202,11 @@ const styles = StyleSheet.create({
   imageWrapper: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
-    zIndex: 2,
   },
   locationImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-  },
-  imagePlaceholder: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#e1e1e1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
   },
   locationLabelContainer: {
     position: 'absolute',

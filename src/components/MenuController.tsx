@@ -1,8 +1,7 @@
-// MenuController.tsx - Versión temporal sin AuthContext
-import React, { useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React from 'react';
 import SideMenu from './SideMenu';
 import GuestMenu from './GuestMenu';
+import { useAuth } from '../context/AuthContext';
 
 interface MenuControllerProps {
   visible: boolean;
@@ -11,39 +10,33 @@ interface MenuControllerProps {
 }
 
 const MenuController: React.FC<MenuControllerProps> = ({ visible, onClose, navigation }) => {
-  const [isGuest, setIsGuest] = useState(true); // Por defecto, mostrar el menú de invitado
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        setIsLoading(true);
-        const token = await AsyncStorage.getItem('@goldenbook_auth_token');
-        // Si hay un token, no es invitado
-        setIsGuest(!token);
-      } catch (error) {
-        console.error('Error checking auth status:', error);
-        // En caso de error, asumir invitado
-        setIsGuest(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (visible) {
-      checkAuthStatus();
+  try {
+    const { isGuest, isLoading, user } = useAuth();
+  
+    // Si el menú no es visible, no mostrar nada
+    if (!visible) {
+      return null;
     }
-  }, [visible]);
-
-  if (isLoading) {
-    return null;
+    
+    // Si está cargando, no mostrar nada por ahora
+    if (isLoading) {
+      return null;
+    }
+    
+    // Decisión simplificada:
+    // - Si no hay usuario o es invitado → GuestMenu
+    // - Si hay usuario y no es invitado → SideMenu
+    if (!user || isGuest) {
+      return <GuestMenu visible={visible} onClose={onClose} navigation={navigation} />;
+    } else {
+      return <SideMenu visible={visible} onClose={onClose} navigation={navigation} />;
+    }
+  } catch (error) {
+    console.error("Error en MenuController:", error);
+    
+    // En caso de error, mostrar el GuestMenu por defecto
+    return <GuestMenu visible={visible} onClose={onClose} navigation={navigation} />;
   }
-
-  return isGuest ? (
-    <GuestMenu visible={visible} onClose={onClose} navigation={navigation} />
-  ) : (
-    <SideMenu visible={visible} onClose={onClose} navigation={navigation} />
-  );
 };
 
 export default MenuController;

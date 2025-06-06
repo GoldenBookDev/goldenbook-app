@@ -1,6 +1,3 @@
-import * as AuthSession from 'expo-auth-session';
-import * as Google from 'expo-auth-session/providers/google';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import {
   Alert,
@@ -12,53 +9,65 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator
 } from 'react-native';
+import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
 import { auth } from '../config/firebaseConfig';
-import { isValidEmail } from '../utils/validation'; // Importar validación
+import { isValidEmail } from '../utils/validation';
+import useAuthentication from '../hooks/useAuthentication';
+import i18n from '../i18n'; // Importar i18n
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  const { loginWithGoogle } = useAuthentication();
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: Platform.select({
-      ios: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
-      android: '659096031354-rnak01htij2au9etjjo7apip752v51rm.apps.googleusercontent.com',
-      web: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
-    }),
-    ...(Platform.OS !== 'web' && {
-      expoClientId: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
-    }),
+    androidClientId: '659096031354-rkpvbl0neg4kusuvvq0gijio5jlhc8tl.apps.googleusercontent.com', 
+    iosClientId: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
+    webClientId: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
     redirectUri: AuthSession.makeRedirectUri({
       useProxy: true,
     } as AuthSession.AuthSessionRedirectUriOptions),
   });
 
   useEffect(() => {
-    setIsEmailValid(isValidEmail(email)); // Actualiza el estado según la validación
+    setIsEmailValid(isValidEmail(email));
   }, [email]);
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then((userCredential) => {
-          Alert.alert(
-            'Login exitoso',
-            `Bienvenido ${userCredential.user.displayName}`
-          );
-          navigation.navigate('LocationSelection');
+      
+      setIsLoggingIn(true);
+      
+      loginWithGoogle(id_token)
+        .then((success) => {
+          if (success) {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'LocationSelection' }],
+            });
+          } else {
+            Alert.alert('Error', 'No se pudo iniciar sesión con Google');
+          }
         })
         .catch((error) => {
-          Alert.alert('Error', error.message);
+          console.error("Error en login con Google:", error);
+          Alert.alert('Error', error?.message || 'Error al iniciar sesión con Google');
+        })
+        .finally(() => {
+          setIsLoggingIn(false);
         });
     }
   }, [response]);
 
   const handleContinue = () => {
     if (!isEmailValid) {
-      alert('Please enter a valid email');
+      alert(i18n.t('auth.enterValidEmail'));
       return;
     }
     navigation.navigate('LoginStep2', { email });
@@ -66,13 +75,18 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Log in or sign up</Text>
+      <Text style={styles.title}>{i18n.t('auth.loginTitle')}</Text>
+      {isLoggingIn && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#00B383" />
+        </View>
+      )}
       <TextInput
         style={[
           styles.input,
-          { borderColor: isEmailValid ? '#ADB5BD' : '#FF4D4F' }, // Cambia el borde si es inválido
+          { borderColor: isEmailValid ? '#ADB5BD' : '#FF4D4F' },
         ]}
-        placeholder="Email"
+        placeholder={i18n.t('auth.email')}
         placeholderTextColor="#6C757D"
         keyboardType="email-address"
         autoCapitalize="none"
@@ -84,39 +98,40 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         onPress={handleContinue}
         disabled={!isEmailValid}
       >
-        <Text style={styles.buttonText}>Continue</Text>
+        <Text style={styles.buttonText}>{i18n.t('auth.continue')}</Text>
       </TouchableOpacity>
 
       <View style={styles.dividerContainer}>
         <View style={styles.line} />
-        <Text style={styles.dividerText}>or</Text>
+        <Text style={styles.dividerText}>{i18n.t('auth.or')}</Text>
         <View style={styles.line} />
       </View>
 
       <TouchableOpacity
         style={styles.googleButton}
         onPress={() => promptAsync()}
+        disabled={isLoggingIn}
       >
         <View style={styles.googleContent}>
           <Image
             source={require('../assets/google-icon.png')}
             style={styles.googleIcon}
           />
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
+          <Text style={styles.googleButtonText}>{i18n.t('auth.continueWithGoogle')}</Text>
         </View>
       </TouchableOpacity>
 
       <View style={styles.signupContainer}>
-        <Text style={styles.signupText}>Don’t have an account? </Text>
+        <Text style={styles.signupText}>{i18n.t('auth.dontHaveAccount')}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.signupLink}>Sign up</Text>
+          <Text style={styles.signupLink}>{i18n.t('auth.signUp')}</Text>
         </TouchableOpacity>
       </View>
       <TouchableOpacity
         style={styles.linkContainer}
         onPress={() => navigation.navigate('LocationSelection')}
       >
-        <Text style={styles.link}>Continue without an account</Text>
+        <Text style={styles.link}>{i18n.t('auth.continueWithoutAccount')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -182,6 +197,17 @@ const styles = StyleSheet.create({
     color: '#495057',
     fontSize: Dimensions.get('window').width * 0.035,
     fontFamily: 'EuclidSquare-SemiBold',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
   },
   linkContainer: {
     marginTop: '3%',

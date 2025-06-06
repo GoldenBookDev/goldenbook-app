@@ -1,5 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -12,15 +11,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useAuth } from '../context/AuthContext'; // Importar useAuth
 
 // Import SVG components
 import ArrowRightIcon from '../assets/images/icons/arrow-right-bg.svg';
-import BookmarkIcon from '../assets/images/icons/bookmark.svg';
 import CloseIcon from '../assets/images/icons/close.svg';
 import HeartIcon from '../assets/images/icons/heart.svg';
 import LogoutIcon from '../assets/images/icons/logout.svg';
 import SettingsIcon from '../assets/images/icons/settings.svg';
 import UserIcon from '../assets/images/icons/user.svg';
+import i18n from '../i18n';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,6 +32,31 @@ interface SideMenuProps {
 
 const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => {
   const slideAnim = React.useRef(new Animated.Value(-width)).current;
+  const [userData, setUserData] = useState<any>(null);
+
+  // Usar Auth Context en lugar de lógica interna
+  const auth = useAuth();
+
+  // Función para verificar si el usuario se logueó con Google
+  const isGoogleUser = () => {
+    return auth.user?.providerData?.some(provider => provider.providerId === 'google.com') || false;
+  };
+
+  // Actualizar datos de usuario directamente desde AuthContext
+  useEffect(() => {
+    if (auth.userData) {
+      setUserData(auth.userData);
+    } else if (auth.user) {
+      // Usar datos del usuario de Firebase si no hay userData
+      setUserData({
+        displayName: auth.user.displayName || 'Usuario',
+        email: auth.user.email || '',
+        photoURL: auth.user.photoURL || null
+      });
+    } else {
+      setUserData(null);
+    }
+  }, [auth.userData, auth.user]);
 
   React.useEffect(() => {
     if (visible) {
@@ -51,44 +76,60 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('@goldenbook_auth_token');
-      await AsyncStorage.removeItem('@goldenbook_user_data');
-      // Navigate to login screen
+      // Usar la función de logout del AuthContext
+      await auth.logout();
+
+      console.log("Logout completado, redirigiendo a LoginStep1");
+
+      // Navegar a la pantalla de login
       navigation.reset({
         index: 0,
-        routes: [{ name: 'LoginStep1Screen' }],
+        routes: [{ name: 'LoginStep1' }],
       });
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error('Error durante el logout:', error);
     }
   };
 
-  const menuItems = [
-    {
-      id: 'profile',
-      title: 'My Profile',
-      icon: UserIcon,
-      onPress: () => navigation.navigate('ProfileScreen'),
-    },
-    {
-      id: 'favorites',
-      title: 'My Favorites',
-      icon: HeartIcon,
-      onPress: () => navigation.navigate('FavoritesScreen'),
-    },
-    {
-      id: 'bookmarks',
-      title: 'My Bookmarks',
-      icon: BookmarkIcon,
-      onPress: () => navigation.navigate('BookmarksScreen'),
-    },
-    {
-      id: 'settings',
-      title: 'Settings',
-      icon: SettingsIcon,
-      onPress: () => navigation.navigate('SettingsScreen'),
-    },
-  ];
+  // Crear elementos del menú basado en el tipo de usuario
+  const getMenuItems = () => {
+    const baseItems = [
+      {
+        id: 'favorites',
+        title: i18n.t('menu.myFavorites'),
+        icon: HeartIcon,
+        onPress: () => navigation.navigate('MyFavoritesScreen'),
+      },
+      {
+        id: 'settings',
+        title: i18n.t('menu.settings'),
+        icon: SettingsIcon,
+        onPress: () => navigation.navigate('SettingsScreen'),
+      },
+    ];
+
+    // Solo agregar perfil si NO es usuario de Google
+    if (!isGoogleUser()) {
+      return [
+        {
+          id: 'profile',
+          title: i18n.t('menu.myProfile'),
+          icon: UserIcon,
+          onPress: () => navigation.navigate('ProfileScreen'),
+        },
+        ...baseItems
+      ];
+    }
+
+    return baseItems;
+  };
+
+  const menuItems = getMenuItems();
+
+  // Si está cargando o no hay usuario, no mostrar nada
+  if (auth.isLoading || (!userData && !auth.isGuest)) {
+    return null;
+  }
 
   return (
     <Modal
@@ -98,7 +139,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <Animated.View 
+        <Animated.View
           style={[
             styles.menuContainer,
             { transform: [{ translateX: slideAnim }] }
@@ -111,30 +152,40 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
               </TouchableOpacity>
             </View>
 
+            {/* Información del usuario */}
             <View style={styles.userInfoContainer}>
               <View style={styles.userAvatar}>
-                <Image 
-                  source={require('../assets/images/default-avatar.png')} 
-                  style={styles.avatarImage} 
+                <Image
+                  source={
+                    userData?.photoURL
+                      ? { uri: userData.photoURL }
+                      : require('../assets/images/default-avatar.png')
+                  }
+                  style={styles.avatarImage}
                 />
               </View>
-              <Text style={styles.userName}>John Doe</Text>
-              <Text style={styles.userEmail}>john.doe@example.com</Text>
-              <TouchableOpacity 
-                style={styles.editProfileButton}
-                onPress={() => {
-                  onClose();
-                  navigation.navigate('ProfileScreen');
-                }}
-              >
-                <Text style={styles.editProfileText}>Edit Profile</Text>
-              </TouchableOpacity>
+              <Text style={styles.userName}>{userData?.displayName || 'John Doe'}</Text>
+              <Text style={styles.userEmail}>{userData?.email || 'john.doe@example.com'}</Text>
+
+              {/* Solo mostrar botón de editar perfil si NO es usuario de Google */}
+              {!isGoogleUser() && (
+                <TouchableOpacity
+                  style={styles.editProfileButton}
+                  onPress={() => {
+                    onClose();
+                    navigation.navigate('ProfileScreen');
+                  }}
+                >
+                  <Text style={styles.editProfileText}>{i18n.t('menu.editProfile')}</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
+            {/* Menú de opciones */}
             <View style={styles.menuItems}>
               {menuItems.map((item) => (
-                <TouchableOpacity 
-                  key={item.id} 
+                <TouchableOpacity
+                  key={item.id}
                   style={styles.menuItem}
                   onPress={() => {
                     onClose();
@@ -142,20 +193,21 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
                   }}
                 >
                   <View style={styles.menuItemLeft}>
-                    <item.icon width={width * 0.06} height={width * 0.06}/>
+                    <item.icon width={width * 0.06} height={width * 0.06} />
                     <Text style={styles.menuItemText}>{item.title}</Text>
                   </View>
-                  <ArrowRightIcon width={width * 0.05} height={width * 0.05}/>
+                  <ArrowRightIcon width={width * 0.05} height={width * 0.05} />
                 </TouchableOpacity>
               ))}
             </View>
 
+            {/* Footer con botón de logout */}
             <View style={styles.footer}>
               <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <LogoutIcon width={width * 0.06} height={width * 0.06}/>
-                <Text style={styles.logoutText}>Log Out</Text>
+                <LogoutIcon width={width * 0.06} height={width * 0.06} />
+                <Text style={styles.logoutText}>{i18n.t('menu.logOut')}</Text>
               </TouchableOpacity>
-              <Text style={styles.versionText}>Version 1.0.0</Text>
+              <Text style={styles.versionText}>{i18n.t('menu.version')}</Text>
             </View>
           </SafeAreaView>
         </Animated.View>
@@ -205,11 +257,11 @@ const styles = StyleSheet.create({
     width: width * 0.2,
     height: width * 0.2,
     borderRadius: (width * 0.2) / 2,
-    //backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: width * 0.03,
     overflow: 'hidden',
+    backgroundColor: '#F5F5F5',
   },
   avatarImage: {
     width: '100%',
@@ -238,6 +290,11 @@ const styles = StyleSheet.create({
     fontSize: width * 0.035,
     fontFamily: 'EuclidSquare-Medium',
     color: '#1A1A2E',
+  },
+  googleUserText: {
+    fontSize: width * 0.03,
+    fontFamily: 'EuclidSquare-Medium',
+    color: '#2E7D32',
   },
   menuItems: {
     flex: 1,

@@ -3,37 +3,39 @@ import { RootStackParamList } from '@navigation/navigationTypes';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useRef, useState } from 'react';
 import { Dimensions, FlatList, Image, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import i18n from '../i18n'; // Importar i18n
 
 type OnboardingScreenProps = NativeStackScreenProps<RootStackParamList, 'OnboardingScreen'>;
-
-const SLIDES = [
-  {
-    key: '1',
-    subtitle: 'YOUR TRUSTED GUIDE',
-    title: 'We bring to you the best of each region',
-    description: 'Our partners are carefully selected so you don’t miss any hidden gem.',
-    image: require('../assets/images/slide1.png'),
-  },
-  {
-    key: '2',
-    subtitle: 'TAILORED TO YOU',
-    title: 'Your preferences will guide the way',
-    description: 'We provide useful recommendations based on your needs.',
-    image: require('../assets/images/slide2.png'),
-  },
-  {
-    key: '3',
-    subtitle: 'DETAILED AND UP TO DATE',
-    title: 'Everything you need in one place',
-    description: 'Find updated information about all of our prime suggestions.',
-    image: require('../assets/images/slide3.png'),
-  },
-];
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
   const flatListRef = useRef<FlatList<any>>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { width } = Dimensions.get('window');
+
+  // Definir slides con traducciones
+  const SLIDES = [
+    {
+      key: '1',
+      subtitle: i18n.t('onboarding.slide1.subtitle'),
+      title: i18n.t('onboarding.slide1.title'),
+      description: i18n.t('onboarding.slide1.description'),
+      image: require('../assets/images/slide1.png'),
+    },
+    {
+      key: '2',
+      subtitle: i18n.t('onboarding.slide2.subtitle'),
+      title: i18n.t('onboarding.slide2.title'),
+      description: i18n.t('onboarding.slide2.description'),
+      image: require('../assets/images/slide2.png'),
+    },
+    {
+      key: '3',
+      subtitle: i18n.t('onboarding.slide3.subtitle'),
+      title: i18n.t('onboarding.slide3.title'),
+      description: i18n.t('onboarding.slide3.description'),
+      image: require('../assets/images/slide3.png'),
+    },
+  ];
 
   const renderItem = ({ item }: { item: typeof SLIDES[0] }) => (
     <View style={[styles.slide, { width }]}>
@@ -64,25 +66,21 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Botón de retroceso */}
       {currentIndex > 0 && (
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
       )}
 
-      {/* Botón "Skip" */}
-{currentIndex < SLIDES.length - 1 && (
-  <TouchableOpacity
-    style={[styles.skipButton, { zIndex: 10 }]}
-    onPress={() => navigation.replace('LoginStep1')}
-  >
-    <Text style={styles.skipText}>SKIP</Text>
-  </TouchableOpacity>
-)}
+      {currentIndex < SLIDES.length - 1 && (
+        <TouchableOpacity
+          style={[styles.skipButton, { zIndex: 10 }]}
+          onPress={() => navigation.replace('LoginStep1')}
+        >
+          <Text style={styles.skipText}>{i18n.t('onboarding.skip')}</Text>
+        </TouchableOpacity>
+      )}
 
-
-      {/* FlatList como carrusel */}
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -97,7 +95,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
         }}
       />
 
-      {/* Paginación (dots) */}
       <View style={styles.pagination}>
         {SLIDES.map((_, index) => (
           <View
@@ -110,11 +107,13 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
         ))}
       </View>
 
-      {/* Botón Next / Get Started */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.button} onPress={handleNext}>
           <Text style={styles.buttonText}>
-            {currentIndex === SLIDES.length - 1 ? 'GET STARTED' : 'NEXT'}
+            {currentIndex === SLIDES.length - 1 
+              ? i18n.t('onboarding.getStarted') 
+              : i18n.t('onboarding.next')
+            }
           </Text>
         </TouchableOpacity>
       </View>

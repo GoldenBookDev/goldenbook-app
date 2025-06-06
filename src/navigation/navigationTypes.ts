@@ -2,13 +2,21 @@
 export type RootStackParamList = {
   AnimationScreen: undefined;
   OnboardingScreen: undefined;
-  HomeScreen: { selectedLocation?: string };
+  HomeScreen: {
+    selectedLocation?: string;
+    openMenu?: boolean;
+    refreshTimestamp?: number; // Añade esta línea
+  };
   LoginStep1: undefined;
   LoginStep2: { email: string };
   ResetPassword: undefined;
   Register: undefined;
   LocationSelection: undefined;
-  MapScreen: { selectedLocation?: string };
+  MapScreen: {
+    selectedLocation?: string;
+    focusEstablishmentId?: string; // NUEVO: ID del establecimiento a enfocar
+    openModal?: boolean; // NUEVO: Si abrir el modal automáticamente
+  };
   CategoryScreen: { 
     categoryId: string;
     categoryTitle: string;
@@ -21,4 +29,7 @@ export type RootStackParamList = {
     selectedLocation: string;
     categoryId?: string; // Añadido categoryId opcional
   };
+  ProfileScreen: undefined;
+  MyFavoritesScreen: undefined;
+  SettingsScreen: undefined
 };

@@ -12,6 +12,8 @@ import {
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
+import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
 
 export const useAuthentication = () => {
   const [error, setError] = useState<string | null>(null);
@@ -19,39 +21,59 @@ export const useAuthentication = () => {
   const { clearGuestMode, updateUserData } = useAuth();
 
   // Register with email and password
-  const registerWithEmail = async (email: string, password: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+const registerWithEmail = async (email: string, password: string): Promise<boolean> => {
+  setLoading(true);
+  setError(null);
+  
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
     
+    // Send verification email
+    await sendEmailVerification(user);
+    
+    // Save user data
+    const userData = {
+      uid: user.uid,
+      displayName: user.displayName || email.split('@')[0],
+      email: user.email,
+      photoURL: user.photoURL,
+      emailVerified: user.emailVerified,
+    };
+    
+    await AsyncStorage.setItem('@goldenbook_auth_token', await user.getIdToken());
+    await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(userData));
+    await clearGuestMode();
+    await updateUserData(userData);
+    
+   // En tu función registerWithEmail, después de obtener el usuario
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Send verification email
-      await sendEmailVerification(user);
-      
-      // Save user data
-      const userData = {
-        uid: user.uid,
-        displayName: user.displayName || email.split('@')[0],
-        email: user.email,
-        photoURL: user.photoURL,
-        emailVerified: user.emailVerified,
-      };
-      
-      await AsyncStorage.setItem('@goldenbook_auth_token', await user.getIdToken());
-      await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(userData));
-      await clearGuestMode();
-      await updateUserData(userData);
-      
-      setLoading(false);
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'Registration failed');
-      setLoading(false);
-      return false;
+      // Crear perfil de usuario en Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        profile: {
+          displayName: user.displayName || email.split('@')[0],
+          photoURL: user.photoURL || null,
+          email: user.email,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        favorites: [],   // Array vacío para favoritos
+        bookmarks: []    // Array vacío para marcadores
+      });
+      console.log("✅ Perfil de usuario creado en Firestore");
+    } catch (firestoreError) {
+      console.error("❌ Error al crear perfil de usuario:", firestoreError);
+      // Continuar aunque falle Firestore
     }
-  };
+    
+    setLoading(false);
+    return true;
+  } catch (err: any) {
+    setError(err.message || 'Registration failed');
+    setLoading(false);
+    return false;
+  }
+};
 
   // Login with email and password
   const loginWithEmail = async (email: string, password: string): Promise<boolean> => {
@@ -93,37 +115,76 @@ export const useAuthentication = () => {
   };
 
   // Login with Google
-  const loginWithGoogle = async (idToken: string): Promise<boolean> => {
-    setLoading(true);
-    setError(null);
+const loginWithGoogle = async (idToken: string): Promise<boolean> => {
+  setLoading(true);
+  setError(null);
+  
+  try {
+    const credential = GoogleAuthProvider.credential(idToken);
+    const userCredential = await signInWithCredential(auth, credential);
+    const user = userCredential.user;
     
+    // Save user data
+    const userData = {
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      photoURL: user.photoURL,
+      emailVerified: user.emailVerified,
+    };
+    
+    // Guardar en AsyncStorage
     try {
-      const credential = GoogleAuthProvider.credential(idToken);
-      const userCredential = await signInWithCredential(auth, credential);
-      const user = userCredential.user;
-      
-      // Save user data
-      const userData = {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        photoURL: user.photoURL,
-        emailVerified: user.emailVerified,
-      };
-      
       await AsyncStorage.setItem('@goldenbook_auth_token', await user.getIdToken());
       await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(userData));
       await clearGuestMode();
       await updateUserData(userData);
-      
-      setLoading(false);
-      return true;
-    } catch (err: any) {
-      setError(err.message || 'Google login failed');
-      setLoading(false);
-      return false;
+    } catch (storageError) {
+      console.error("Error guardando datos en AsyncStorage:", storageError);
+      // Continuar aunque falle, para no bloquear el flujo
     }
-  };
+    
+    // Actualizar Firestore - una sola vez
+    try {
+      // Verificar si el perfil del usuario ya existe
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (!userDocSnap.exists()) {
+        // Solo crear si no existe
+        await setDoc(userDocRef, {
+          profile: {
+            displayName: user.displayName || '',
+            photoURL: user.photoURL || null,
+            email: user.email,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          favorites: [],
+          bookmarks: []
+        });
+        console.log("✅ Perfil de usuario creado en Firestore para usuario de Google");
+      } else {
+        // Solo actualizar una vez
+        await updateDoc(userDocRef, {
+          'profile.updatedAt': new Date()
+        });
+        console.log("✅ Información de usuario actualizada en Firestore");
+      }
+    } catch (firestoreError) {
+      console.error("❌ Error al gestionar perfil de usuario:", firestoreError);
+      // Continuar aunque falle Firestore
+    }
+    
+    setLoading(false);
+    return true;
+  } catch (err: any) {
+    console.error("Error en loginWithGoogle:", err);
+    setError(err.message || 'Google login failed');
+    setLoading(false);
+    return false;
+  }
+};
 
   // Login as guest
   const loginAsGuest = async (): Promise<boolean> => {

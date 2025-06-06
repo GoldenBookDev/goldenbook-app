@@ -3,12 +3,10 @@ import {
   Dimensions,
   StyleSheet,
   TextInput,
-  View,
-  TouchableOpacity,
   TextInputProps,
+  View
 } from 'react-native';
 
-// Import Search Icon
 import SearchIcon from '../assets/images/icons/search.svg';
 
 const { width } = Dimensions.get('window');

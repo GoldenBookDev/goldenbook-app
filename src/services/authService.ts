@@ -18,7 +18,6 @@ export const registerUser = async (email: string, password: string): Promise<Use
 
     // Send email verification
     await sendEmailVerification(user);
-    console.log('Verification email sent.');
     return user;
   } catch (error: any) {
     console.error('Error during registration:', error);

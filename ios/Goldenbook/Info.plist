@@ -34,12 +34,6 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>com.googleusercontent.apps.659096031354-gl59hae39tch43jsq8oefud2fcrvgd61</string>
-        </array>
-      </dict>
-      <dict>
-        <key>CFBundleURLSchemes</key>
-        <array>
           <string>exp+goldenbook</string>
         </array>
       </dict>

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons'; // Para el ícono de retroceso y el ojo
+import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
@@ -11,20 +11,21 @@ import {
   View,
 } from 'react-native';
 import { RootStackParamList } from '../navigation/navigationTypes';
-import { loginUser } from '../services/authService'; // Importa authService
+import { loginUser } from '../services/authService';
+import i18n from '../i18n'; // Importar i18n
 
 type LoginStep2Props = NativeStackScreenProps<RootStackParamList, 'LoginStep2'>;
 
 const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
   const { email } = route.params;
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Estado para mostrar/ocultar contraseña
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     try {
-      const user = await loginUser(email, password); // Usa authService para iniciar sesión
+      const user = await loginUser(email, password);
       alert(`Welcome back, ${user?.email}`);
-      navigation.navigate('HomeScreen');
+      navigation.navigate('HomeScreen', {});
     } catch (error: any) {
       alert(error.message);
     }
@@ -32,7 +33,6 @@ const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Botón de retroceso */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -40,21 +40,18 @@ const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
         <Ionicons name="arrow-back" size={24} color="#495057" />
       </TouchableOpacity>
 
-      {/* Título */}
-      <Text style={styles.title}>Welcome to</Text>
+      <Text style={styles.title}>{i18n.t('auth.welcomeTo')}</Text>
 
-      {/* Logo */}
       <Image
         source={require('../assets/LOGOGB1.png')}
         style={styles.logo}
         resizeMode="contain"
       />
 
-      {/* Input de contraseña con funcionalidad de mostrar/ocultar */}
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder={i18n.t('auth.password')}
           placeholderTextColor="#6C757D"
           secureTextEntry={!showPassword}
           value={password}
@@ -72,18 +69,16 @@ const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* Botón de inicio de sesión */}
       <TouchableOpacity
         style={[styles.button, !password && styles.disabledButton]}
         onPress={handleLogin}
         disabled={!password}
       >
-        <Text style={styles.buttonText}>LOG IN</Text>
+        <Text style={styles.buttonText}>{i18n.t('auth.login')}</Text>
       </TouchableOpacity>
 
-      {/* Enlace de recuperación de contraseña */}
       <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
-        <Text style={styles.link}>Forgot password?</Text>
+        <Text style={styles.link}>{i18n.t('auth.forgotPassword')}</Text>
       </TouchableOpacity>
     </View>
   );
