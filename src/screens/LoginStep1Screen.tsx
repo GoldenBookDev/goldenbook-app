@@ -1,32 +1,31 @@
+import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
+import * as Analytics from 'expo-firebase-analytics';
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   Image,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  ActivityIndicator
+  View
 } from 'react-native';
-import * as AuthSession from 'expo-auth-session';
-import * as Google from 'expo-auth-session/providers/google';
-import { auth } from '../config/firebaseConfig';
-import { isValidEmail } from '../utils/validation';
 import useAuthentication from '../hooks/useAuthentication';
 import i18n from '../i18n'; // Importar i18n
+import { isValidEmail } from '../utils/validation';
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  
+
   const { loginWithGoogle } = useAuthentication();
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    androidClientId: '659096031354-rkpvbl0neg4kusuvvq0gijio5jlhc8tl.apps.googleusercontent.com', 
+    androidClientId: '659096031354-rkpvbl0neg4kusuvvq0gijio5jlhc8tl.apps.googleusercontent.com',
     iosClientId: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
     webClientId: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
     redirectUri: AuthSession.makeRedirectUri({
@@ -41,9 +40,9 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
-      
+
       setIsLoggingIn(true);
-      
+
       loginWithGoogle(id_token)
         .then((success) => {
           if (success) {
@@ -64,6 +63,13 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         });
     }
   }, [response]);
+
+  useEffect(() => {
+    Analytics.logEvent('screen_view', {
+      screen_name: 'LoginStep1Screen',
+      screen_class: 'LoginStep1Screen'
+    });
+  }, []);
 
   const handleContinue = () => {
     if (!isEmailValid) {

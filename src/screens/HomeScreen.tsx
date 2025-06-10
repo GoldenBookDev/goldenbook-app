@@ -1,4 +1,5 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Analytics from 'expo-firebase-analytics';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -11,6 +12,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LocationPermissionModal from '../components/LocationPermissionModal';
+import { useLocation } from '../hooks/useLocation';
 import i18n from '../i18n';
 import { RootStackParamList } from '../navigation/navigationTypes';
 
@@ -67,6 +70,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     handleShowAllResults
   } = useSearch(allEstablishments, navigation, selectedLocation);
 
+  const { shouldShowModal, requestPermission, hideModal } = useLocation();
+
   useEffect(() => {
     const params = route.params as any;
     if (params?.openMenu) {
@@ -85,7 +90,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     }
   }, [route.params?.refreshTimestamp, navigation]);
 
+  useEffect(() => {
+    Analytics.logEvent('screen_view', {
+      screen_name: 'HomeScreen',
+      screen_class: 'HomeScreen'
+    });
+  }, []);
+
   const toggleMenu = () => {
+    Analytics.logEvent('select_content', {
+      content_type: 'menu_button',
+      item_id: 'toggle_menu'
+    });
     setMenuVisible(!menuVisible);
   };
 
@@ -98,6 +114,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   };
 
   const handleCategoryPress = (categoryId: string, categoryTitle: string) => {
+    Analytics.logEvent('select_content', {
+      content_type: 'category',
+      item_id: categoryId,
+      item_name: categoryTitle
+    });
+
     if (selectedLocation) {
       navigation.navigate('CategoryScreen', {
         categoryId,
@@ -108,7 +130,60 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   };
 
   const handleEstablishmentPress = (establishmentId: string) => {
+    Analytics.logEvent('select_content', {
+      content_type: 'establishment',
+      item_id: establishmentId
+    });
+
     navigation.navigate('EstablishmentScreen', { establishmentId });
+  };
+
+  const handleLocationButtonPress = () => {
+    Analytics.logEvent('select_content', {
+      content_type: 'location_button',
+      item_id: 'back_to_location_selection'
+    });
+
+    navigation.navigate('LocationSelection');
+  };
+
+  const handleMapButtonPress = () => {
+    Analytics.logEvent('select_content', {
+      content_type: 'map_button',
+      item_id: 'floating_map_button'
+    });
+
+    navigation.navigate('MapScreen', {
+      selectedLocation: selectedLocation || undefined
+    });
+  };
+
+  const handleSearchSubmit = (query: string) => {
+    if (query.trim()) {
+      Analytics.logEvent('search', {
+        search_term: query,
+        content_type: 'establishment_search'
+      });
+    }
+  };
+
+  const handleEstablishmentFromSearch = (establishmentId: string) => {
+    Analytics.logEvent('select_content', {
+      content_type: 'establishment',
+      item_id: establishmentId,
+      source: 'search_results'
+    });
+
+    handleSelectEstablishment(establishmentId);
+  };
+
+  const handleShowAllSearchResults = () => {
+    Analytics.logEvent('select_content', {
+      content_type: 'show_all_results',
+      item_id: 'search_show_all'
+    });
+
+    handleShowAllResults();
   };
 
   if (loading) {
@@ -119,12 +194,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      <MenuController
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        navigation={navigation}
-      />
-
+      {/* Contenido principal */}
       <ImageBackground
         source={backgroundImage}
         style={styles.fixedBackground}
@@ -136,7 +206,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.navigate('LocationSelection')}
+            onPress={handleLocationButtonPress}
           >
             <ArrowLeftIcon width={width * 0.1} height={width * 0.1} />
           </TouchableOpacity>
@@ -166,7 +236,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
               <SearchBar
                 placeholder={i18n.t('home.searchPlaceholder')}
                 value={searchQuery}
-                onChangeText={handleSearchChange}
+                onChangeText={(query) => {
+                  handleSearchChange(query);
+                  if (query.length > 2) {
+                    handleSearchSubmit(query);
+                  }
+                }}
                 onFocus={handleSearchFocus}
                 onBlur={handleSearchBlur}
                 style={styles.searchBar}
@@ -174,8 +249,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
 
               <SearchDropdown
                 results={searchResults}
-                onSelectEstablishment={handleSelectEstablishment}
-                onShowAllResults={handleShowAllResults}
+                onSelectEstablishment={handleEstablishmentFromSearch}
+                onShowAllResults={handleShowAllSearchResults}
                 visible={isSearchFocused && searchQuery.trim() !== ''}
               />
             </View>
@@ -227,11 +302,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
 
         <TouchableOpacity
           style={styles.floatingMapButton}
-          onPress={() => {
-            navigation.navigate('MapScreen', {
-              selectedLocation: selectedLocation || undefined
-            });
-          }}
+          onPress={handleMapButtonPress}
         >
           <LandLayerLocationIcon
             width={width * 0.045}
@@ -242,6 +313,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
           <Text style={styles.floatingMapButtonText}>{i18n.t('home.seeMap')}</Text>
         </TouchableOpacity>
       </SafeAreaView>
+
+      {/* Modales - Renderizados al final para asegurar z-index correcto */}
+      <MenuController
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        navigation={navigation}
+      />
+
+      {/* Modal de permisos de ubicación */}
+      <LocationPermissionModal
+        visible={shouldShowModal}
+        onAllow={requestPermission}
+        onDeny={hideModal}
+      />
     </View>
   );
 };
@@ -270,7 +355,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
+    zIndex: 5,
   },
   headerOverlay: {
     backgroundColor: 'transparent',
@@ -336,6 +421,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    zIndex: 3,
   },
   floatingMapButtonText: {
     color: '#FFFFFF',

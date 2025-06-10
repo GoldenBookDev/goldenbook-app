@@ -3,11 +3,6 @@
     "name": "Goldenbook",
     "slug": "goldenbook",
     "scheme": "com.bwebstudio.goldenbook",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,7 +29,6 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
         }
       ],
-      "@react-native-firebase/app",
       [
         "expo-build-properties",
         {
@@ -47,10 +41,10 @@
     ],
     "ios": {
       "bundleIdentifier": "com.bwebstudio.goldenbook",
+      "supportsTablet": true,
       "config": {
         "googleMapsApiKey": "AIzaSyDVJnSG4u2xmUCSK421laj3tLx3ZH7NDdM"
       },
-      "supportsTablet": true,
       "associatedDomains": [
         "applinks:meek-toffee-0a1ea2.netlify.app"
       ]

@@ -1,5 +1,6 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import * as Analytics from 'expo-firebase-analytics';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/navigationTypes';
@@ -24,6 +25,13 @@ type TabType = 'Overview' | 'Contacts' | 'Reservations';
 const EstablishmentScreen: React.FC<Props> = ({ route, navigation }) => {
   const { establishmentId } = route.params;
   const [activeTab, setActiveTab] = useState<TabType>('Overview');
+
+  useEffect(() => {
+    Analytics.logEvent('screen_view', {
+      screen_name: 'EstablishmentScreen',
+      screen_class: 'EstablishmentScreen'
+    });
+  }, []);
 
   // Custom hooks para manejar datos y acciones
   const { establishment, loading } = useEstablishmentData(establishmentId);

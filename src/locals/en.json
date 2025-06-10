@@ -224,5 +224,26 @@
     "passwordTooShort": "New password must be at least 6 characters long",
     "passwordUpdateError": "Failed to update password. Please try again.",
     "deleteAccountError": "Failed to delete account. Please try again."
+  },
+  "location": {
+    "permissionTitle": "Find places near you",
+    "permissionDescription": "Goldenbook wants to access your location to show you the best nearby establishments.",
+    "benefit1": "Discover places near you",
+    "benefit2": "Get accurate directions",
+    "benefit3": "Receive personalized recommendations",
+    "allowAccess": "Allow location access",
+    "notNow": "Not now",
+    "privacyNote": "Your location is only used to improve your experience and is not shared with third parties.",
+    "permissionDenied": "Permission denied",
+    "permissionDeniedMessage": "To find places near you, enable location in Settings.",
+    "benefit4": "See distance and travel time to places",
+    "goToSettingsMessage": "Location access was previously denied. Please enable it in Settings to use maps and find nearby places."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "settings": "Settings",
+    "ok": "OK",
+    "confirm": "Confirm",
+    "continue": "Continue"
   }
 }

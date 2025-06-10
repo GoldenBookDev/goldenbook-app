@@ -224,5 +224,26 @@
     "passwordTooShort": "A nova palavra-passe deve ter pelo menos 6 caracteres",
     "passwordUpdateError": "Falha ao actualizar palavra-passe. Por favor, tente novamente.",
     "deleteAccountError": "Falha ao eliminar conta. Por favor, tente novamente."
+  },
+  "location": {
+    "permissionTitle": "Encontra locais perto de ti",
+    "permissionDescription": "O Goldenbook quer aceder à tua localização para te mostrar os melhores estabelecimentos próximos.",
+    "benefit1": "Descobre locais perto de ti",
+    "benefit2": "Obtém direções precisas",
+    "benefit3": "Recebe recomendações personalizadas",
+    "allowAccess": "Permitir acesso à localização",
+    "notNow": "Agora não",
+    "privacyNote": "A tua localização é usada apenas para melhorar a tua experiência e não é partilhada com terceiros.",
+    "permissionDenied": "Permissão negada",
+    "permissionDeniedMessage": "Para encontrares locais perto de ti, ativa a localização nas Definições.",
+    "benefit4": "Vê distância e tempo de viagem aos locais",
+    "goToSettingsMessage": "O acesso à localização foi negado anteriormente. Por favor, ativa-o nas Definições para usar mapas e encontrar locais próximos."
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "settings": "Definições",
+    "ok": "OK",
+    "confirm": "Confirmar",
+    "continue": "Continuar"
   }
 }
