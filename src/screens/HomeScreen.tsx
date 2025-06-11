@@ -70,7 +70,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     handleShowAllResults
   } = useSearch(allEstablishments, navigation, selectedLocation);
 
-  const { shouldShowModal, requestPermission, hideModal } = useLocation();
+  const {
+    shouldShowModal,
+    requestPermission,
+    hideModal,
+    hasPermission,
+    location
+  } = useLocation();
+
+  // Estado para establecimientos cercanos
+  const [nearbyEstablishments, setNearbyEstablishments] = useState<any[]>([]);
 
   useEffect(() => {
     const params = route.params as any;
@@ -96,6 +105,31 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
       screen_class: 'HomeScreen'
     });
   }, []);
+
+  // Efecto para cargar establecimientos cercanos cuando se otorgan permisos
+  useEffect(() => {
+    const loadNearbyEstablishments = async () => {
+      if (hasPermission && location && allEstablishments.length > 0) {
+        try {
+          // Aquí implementarías la lógica para filtrar establecimientos por distancia
+          // Por ahora, tomamos una muestra de los establecimientos disponibles
+          const nearby = allEstablishments
+            .slice(0, 8) // Tomar los primeros 8 como ejemplo
+            .map(establishment => ({
+              ...establishment,
+              distance: Math.random() * 5 + 0.1 // Distancia simulada en km
+            }))
+            .sort((a, b) => a.distance - b.distance);
+
+          setNearbyEstablishments(nearby);
+        } catch (error) {
+          console.log('Error loading nearby establishments:', error);
+        }
+      }
+    };
+
+    loadNearbyEstablishments();
+  }, [hasPermission, location, allEstablishments]);
 
   const toggleMenu = () => {
     Analytics.logEvent('select_content', {
@@ -186,6 +220,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     handleShowAllResults();
   };
 
+  const handlePermissionGranted = async () => {
+    await requestPermission();
+    // El efecto useEffect se encargará de cargar los establecimientos cercanos
+  };
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -260,6 +299,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
               onCategoryPress={handleCategoryPress}
             />
 
+            {/* Sección "Near me" - Solo se muestra si hay permisos de ubicación */}
+            {hasPermission && nearbyEstablishments.length > 0 && (
+              <EstablishmentSection
+                title={i18n.t('home.nearMe')}
+                establishments={nearbyEstablishments}
+                onEstablishmentPress={handleEstablishmentPress}
+              />
+            )}
+
             <EstablishmentSection
               title={i18n.t('home.recommended')}
               establishments={recommendedEstablishments}
@@ -324,7 +372,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
       {/* Modal de permisos de ubicación */}
       <LocationPermissionModal
         visible={shouldShowModal}
-        onAllow={requestPermission}
+        onAllow={handlePermissionGranted}
         onDeny={hideModal}
       />
     </View>
