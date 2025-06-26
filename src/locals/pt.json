@@ -25,7 +25,9 @@
     "promotionalEmails": "O Goldenbook enviará notificações push e emails promocionais com as recomendações mais relevantes e ofertas sazonais exclusivas. Pode cancelar a subscrição a qualquer momento.",
     "noCommercialMessages": "Não desejo receber mensagens comerciais do Goldenbook",
     "acceptTermsRequired": "Aceito os Termos e Condições e Política de Privacidade",
-    "receivePromotionalEmails": "Quero receber ofertas exclusivas e recomendações"
+    "receivePromotionalEmails": "Quero receber ofertas exclusivas e recomendações",
+    "signingIn": "A iniciar sessão...",
+    "enterPassword": "Por favor, introduza a sua palavra-passe"
   },
   "onboarding": {
     "skip": "SALTAR",
@@ -308,6 +310,20 @@
     "settings": "Definições",
     "ok": "OK",
     "confirm": "Confirmar",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "error": "Erro"
+  },
+  "permissions": {
+    "requesting": "A solicitar permissões...",
+    "notifications": {
+      "denied": {
+        "title": "Notificações Desativadas",
+        "message": "Pode ativar as notificações mais tarde nas Definições para receber atualizações importantes.",
+        "settingsMessage": "As notificações estão desativadas. Por favor, ative-as nas Definições para receber atualizações importantes sobre os seus pedidos e promoções."
+      }
+    },
+    "error": {
+      "message": "Ocorreu um erro ao solicitar permissões. Por favor, tente novamente."
+    }
   }
 }

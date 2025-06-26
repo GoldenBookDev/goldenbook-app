@@ -1,6 +1,5 @@
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
-import * as Analytics from 'expo-firebase-analytics';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,8 +12,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useAuth } from '../context/AuthContext'; // Agregar esta importación
+import { useAuth } from '../context/AuthContext';
 import useAuthentication from '../hooks/useAuthentication';
+import usePermissions from '../hooks/usePermissions'; // Importar el hook
 import i18n from '../i18n';
 import { isValidEmail } from '../utils/validation';
 
@@ -24,7 +24,20 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const { loginWithGoogle, loginAsGuest } = useAuthentication();
-  const { setAsGuest } = useAuth(); // Obtener setAsGuest del contexto
+  const { setAsGuest } = useAuth();
+
+  // Hook de permisos que se ejecutará después del login exitoso
+  const { requestAllPermissions, isLoading: isRequestingPermissions } = usePermissions({
+    requestOnMount: false, // No solicitar automáticamente
+    onComplete: () => {
+      // Navegar a LocationSelection cuando los permisos terminen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'LocationSelection' }],
+      });
+    },
+    showAlertOnDenied: true,
+  });
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     androidClientId: '659096031354-rkpvbl0neg4kusuvvq0gijio5jlhc8tl.apps.googleusercontent.com',
@@ -48,10 +61,8 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
       loginWithGoogle(id_token)
         .then((success) => {
           if (success) {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'LocationSelection' }],
-            });
+            // En lugar de navegar directamente, solicitar permisos primero
+            requestAllPermissions();
           } else {
             Alert.alert('Error', 'No se pudo iniciar sesión con Google');
           }
@@ -64,14 +75,9 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
           setIsLoggingIn(false);
         });
     }
-  }, [response]);
+  }, [response, requestAllPermissions]);
 
-  useEffect(() => {
-    Analytics.logEvent('screen_view', {
-      screen_name: 'LoginStep1Screen',
-      screen_class: 'LoginStep1Screen'
-    });
-  }, []);
+
 
   const handleContinue = () => {
     if (!isEmailValid) {
@@ -81,28 +87,21 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     navigation.navigate('LoginStep2', { email });
   };
 
-  // FUNCIÓN PARA MANEJAR CONTINUAR SIN CUENTA
   const handleContinueWithoutAccount = async () => {
     try {
       setIsLoggingIn(true);
 
-      // Usar setAsGuest del contexto para establecer el modo invitado
       await setAsGuest();
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'LocationSelection' }],
-      });
+      // En lugar de navegar directamente, solicitar permisos primero
+      requestAllPermissions();
     } catch (error) {
       console.error("Error al establecer modo invitado:", error);
 
-      // Intentar de manera alternativa usando loginAsGuest
       try {
         await loginAsGuest();
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'LocationSelection' }],
-        });
+        // En lugar de navegar directamente, solicitar permisos primero
+        requestAllPermissions();
       } catch (fallbackError) {
         console.error("Error en fallback:", fallbackError);
         Alert.alert('Error', 'No se pudo entrar en modo invitado');
@@ -112,14 +111,25 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
+  // Mostrar loading si está logueando o solicitando permisos
+  const showLoading = isLoggingIn || isRequestingPermissions;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{i18n.t('auth.loginTitle')}</Text>
-      {isLoggingIn && (
+
+      {showLoading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#00B383" />
+          <Text style={styles.loadingText}>
+            {isRequestingPermissions
+              ? i18n.t('permissions.requesting')
+              : i18n.t('auth.signingIn')
+            }
+          </Text>
         </View>
       )}
+
       <TextInput
         style={[
           styles.input,
@@ -131,11 +141,13 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         autoCapitalize="none"
         value={email}
         onChangeText={setEmail}
+        editable={!showLoading}
       />
+
       <TouchableOpacity
         style={[styles.button, !isEmailValid && styles.disabledButton]}
         onPress={handleContinue}
-        disabled={!isEmailValid}
+        disabled={!isEmailValid || showLoading}
       >
         <Text style={styles.buttonText}>{i18n.t('auth.continue')}</Text>
       </TouchableOpacity>
@@ -149,7 +161,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
       <TouchableOpacity
         style={styles.googleButton}
         onPress={() => promptAsync()}
-        disabled={isLoggingIn}
+        disabled={showLoading}
       >
         <View style={styles.googleContent}>
           <Image
@@ -162,16 +174,18 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>{i18n.t('auth.dontHaveAccount')}</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Register')}
+          disabled={showLoading}
+        >
           <Text style={styles.signupLink}>{i18n.t('auth.signUp')}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* BOTÓN PARA CONTINUAR SIN CUENTA */}
       <TouchableOpacity
         style={styles.linkContainer}
         onPress={handleContinueWithoutAccount}
-        disabled={isLoggingIn}
+        disabled={showLoading}
       >
         <Text style={styles.link}>{i18n.t('auth.continueWithoutAccount')}</Text>
       </TouchableOpacity>
@@ -246,10 +260,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: Dimensions.get('window').width * 0.035,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#6C757D',
+    textAlign: 'center',
   },
   linkContainer: {
     marginTop: '3%',

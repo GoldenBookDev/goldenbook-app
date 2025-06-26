@@ -17,9 +17,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Goldenbook necesita acceder a tu ubicación para mostrarte lugares cercanos.",
-          "locationAlwaysPermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos incluso cuando la app está en segundo plano.",
-          "locationWhenInUsePermission": "Goldenbook usa tu ubicación para mostrarte lugares cercanos."
+          "locationAlwaysAndWhenInUsePermission": "Goldenbook needs to access your location to show nearby places.",
+          "locationAlwaysPermission": "Goldenbook uses your location to show nearby places even when the app is in the background.",
+          "locationWhenInUsePermission": "Goldenbook uses your location to show nearby places."
         }
       ],
       [
@@ -27,6 +27,20 @@
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends.",
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#00B383",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "Goldenbook uses tracking to provide personalized content and improve user experience."
         }
       ],
       [
@@ -47,7 +61,10 @@
       },
       "associatedDomains": [
         "applinks:meek-toffee-0a1ea2.netlify.app"
-      ]
+      ],
+      "infoPlist": {
+        "NSUserTrackingUsageDescription": "Goldenbook uses tracking to provide personalized content and improve user experience."
+      }
     },
     "android": {
       "package": "com.bwebstudio.goldenbook",
@@ -62,7 +79,10 @@
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WAKE_LOCK"
       ],
       "intentFilters": [
         {

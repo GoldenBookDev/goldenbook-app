@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Image,
   StyleSheet,
@@ -10,7 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import i18n from '../i18n'; // Importar i18n
+import usePermissions from '../hooks/usePermissions'; // Importar el hook
+import i18n from '../i18n';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { loginUser } from '../services/authService';
 
@@ -20,24 +22,63 @@ const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
   const { email } = route.params;
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Hook de permisos que se ejecutará después del login exitoso
+  const { requestAllPermissions, isLoading: isRequestingPermissions } = usePermissions({
+    requestOnMount: false,
+    onComplete: () => {
+      // Navegar a LocationSelection cuando los permisos terminen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'LocationSelection' }],
+      });
+    },
+    showAlertOnDenied: true,
+  });
 
   const handleLogin = async () => {
+    if (!password.trim()) {
+      alert(i18n.t('auth.enterPassword'));
+      return;
+    }
+
     try {
+      setIsLoggingIn(true);
       const user = await loginUser(email, password);
-      navigation.navigate('HomeScreen', {});
+
+      // En lugar de navegar directamente, solicitar permisos primero
+      requestAllPermissions();
     } catch (error: any) {
       alert(error.message);
+      setIsLoggingIn(false);
     }
   };
+
+  // Mostrar loading si está logueando o solicitando permisos
+  const showLoading = isLoggingIn || isRequestingPermissions;
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
+        disabled={showLoading}
       >
         <Ionicons name="arrow-back" size={24} color="#495057" />
       </TouchableOpacity>
+
+      {showLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#00B383" />
+          <Text style={styles.loadingText}>
+            {isRequestingPermissions
+              ? i18n.t('permissions.requesting')
+              : i18n.t('auth.signingIn')
+            }
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.title}>{i18n.t('auth.welcomeTo')}</Text>
 
@@ -55,10 +96,14 @@ const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
           secureTextEntry={!showPassword}
           value={password}
           onChangeText={setPassword}
+          editable={!showLoading}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
         <TouchableOpacity
           style={styles.eyeIcon}
           onPress={() => setShowPassword(!showPassword)}
+          disabled={showLoading}
         >
           <Ionicons
             name={showPassword ? 'eye-off' : 'eye'}
@@ -69,14 +114,17 @@ const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
       </View>
 
       <TouchableOpacity
-        style={[styles.button, !password && styles.disabledButton]}
+        style={[styles.button, (!password.trim() || showLoading) && styles.disabledButton]}
         onPress={handleLogin}
-        disabled={!password}
+        disabled={!password.trim() || showLoading}
       >
         <Text style={styles.buttonText}>{i18n.t('auth.login')}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('ResetPassword')}
+        disabled={showLoading}
+      >
         <Text style={styles.link}>{i18n.t('auth.forgotPassword')}</Text>
       </TouchableOpacity>
     </View>
@@ -95,6 +143,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '6%',
     left: '6%',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: Dimensions.get('window').width * 0.035,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#6C757D',
+    textAlign: 'center',
   },
   logo: {
     width: Dimensions.get('window').width * 0.5,

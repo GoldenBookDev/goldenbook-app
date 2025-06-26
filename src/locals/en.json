@@ -25,7 +25,9 @@
     "promotionalEmails": "Goldenbook will send you push notifications and promotional emails with the most relevant recommendations and exclusive seasonal offers. You can unsubscribe at any moment.",
     "noCommercialMessages": "I don't wish to receive commercial messages by Goldenbook",
     "acceptTermsRequired": "I accept the Terms and Conditions and Privacy Policy",
-    "receivePromotionalEmails": "I want to receive exclusive offers and recommendations"
+    "receivePromotionalEmails": "I want to receive exclusive offers and recommendations",
+    "signingIn": "Signing in...",
+    "enterPassword": "Please enter your password"
   },
   "onboarding": {
     "skip": "SKIP",
@@ -308,6 +310,20 @@
     "settings": "Settings",
     "ok": "OK",
     "confirm": "Confirm",
-    "continue": "Continue"
+    "continue": "Continue",
+    "error": "Error"
+  },
+  "permissions": {
+    "requesting": "Requesting permissions...",
+    "notifications": {
+      "denied": {
+        "title": "Notifications Disabled",
+        "message": "You can enable notifications later in Settings to receive important updates.",
+        "settingsMessage": "Notifications are disabled. Please enable them in Settings to receive important updates about your orders and promotions."
+      }
+    },
+    "error": {
+      "message": "An error occurred while requesting permissions. Please try again."
+    }
   }
 }

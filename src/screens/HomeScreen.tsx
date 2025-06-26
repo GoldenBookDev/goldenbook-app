@@ -1,5 +1,4 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import * as Analytics from 'expo-firebase-analytics';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
@@ -95,13 +94,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     }
   }, [route.params?.refreshTimestamp, navigation]);
 
-  useEffect(() => {
-    Analytics.logEvent('screen_view', {
-      screen_name: 'HomeScreen',
-      screen_class: 'HomeScreen'
-    });
-  }, []);
-
   // Función para calcular distancia entre dos puntos
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     const R = 6371; // Radio de la Tierra en km
@@ -153,10 +145,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   }, [hasPermission, location, allEstablishments]);
 
   const toggleMenu = () => {
-    Analytics.logEvent('select_content', {
-      content_type: 'menu_button',
-      item_id: 'toggle_menu'
-    });
+
     setMenuVisible(!menuVisible);
   };
 
@@ -169,11 +158,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   };
 
   const handleCategoryPress = (categoryId: string, categoryTitle: string) => {
-    Analytics.logEvent('select_content', {
-      content_type: 'category',
-      item_id: categoryId,
-      item_name: categoryTitle
-    });
 
     if (selectedLocation) {
       navigation.navigate('CategoryScreen', {
@@ -185,28 +169,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   };
 
   const handleEstablishmentPress = (establishmentId: string) => {
-    Analytics.logEvent('select_content', {
-      content_type: 'establishment',
-      item_id: establishmentId
-    });
+
 
     navigation.navigate('EstablishmentScreen', { establishmentId });
   };
 
   const handleLocationButtonPress = () => {
-    Analytics.logEvent('select_content', {
-      content_type: 'location_button',
-      item_id: 'back_to_location_selection'
-    });
 
     navigation.navigate('LocationSelection');
   };
 
   const handleMapButtonPress = () => {
-    Analytics.logEvent('select_content', {
-      content_type: 'map_button',
-      item_id: 'floating_map_button'
-    });
+
 
     navigation.navigate('MapScreen', {
       selectedLocation: selectedLocation || undefined
@@ -215,28 +189,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
 
   const handleSearchSubmit = (query: string) => {
     if (query.trim()) {
-      Analytics.logEvent('search', {
-        search_term: query,
-        content_type: 'establishment_search'
-      });
+
     }
   };
 
   const handleEstablishmentFromSearch = (establishmentId: string) => {
-    Analytics.logEvent('select_content', {
-      content_type: 'establishment',
-      item_id: establishmentId,
-      source: 'search_results'
-    });
+
 
     handleSelectEstablishment(establishmentId);
   };
 
   const handleShowAllSearchResults = () => {
-    Analytics.logEvent('select_content', {
-      content_type: 'show_all_results',
-      item_id: 'search_show_all'
-    });
+
 
     handleShowAllResults();
   };
