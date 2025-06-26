@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-    Establishment,
-    getCategoryById,
-    getEstablishments,
-    getLocationById
+  Establishment,
+  getCategoryById,
+  getEstablishments,
+  getLocationById
 } from '../services/firestoreService';
 
 interface SubcategoryData {
@@ -36,14 +36,25 @@ export const useCategoryData = (categoryId: string, selectedLocation: string) =>
           return;
         }
 
-        // Process subcategories
+        // ========== PROCESAR SUBCATEGORÍAS CON NUEVA ESTRUCTURA ==========
         let subcategoryArray: SubcategoryData[] = [];
-        if (categoryData.subcategories && typeof categoryData.subcategories === 'object') {
-          subcategoryArray = Object.entries(categoryData.subcategories).map(([key, title]) => ({
-            id: key,
-            title: String(title)
-          }));
+        
+        if (categoryData.subcategories) {
+          if (Array.isArray(categoryData.subcategories)) {
+            // ✅ NUEVA ESTRUCTURA: Array de claves ['experiences', 'hotels', ...]
+            subcategoryArray = categoryData.subcategories.map((key: string) => ({
+              id: key,
+              title: key // El título se traducirá en el componente
+            }));
+          } else if (typeof categoryData.subcategories === 'object') {
+            // 🔄 ESTRUCTURA VIEJA: Objeto {'experiences': 'Experiences', ...}
+            subcategoryArray = Object.entries(categoryData.subcategories).map(([key, title]) => ({
+              id: key,
+              title: String(title)
+            }));
+          }
         }
+        
         setSubcategories(subcategoryArray);
 
         // Get establishments for this category
@@ -53,12 +64,14 @@ export const useCategoryData = (categoryId: string, selectedLocation: string) =>
         );
 
         if (filteredEstablishments.length !== allEstablishments.length) {
-          console.warn(`Warning: ${allEstablishments.length - filteredEstablishments.length} establishments were filtered out.`);
+          console.warn(`⚠️ Warning: ${allEstablishments.length - filteredEstablishments.length} establishments were filtered out.`);
         }
 
+        console.log(`🏢 Establecimientos cargados para ${categoryId}:`, filteredEstablishments.length);
         setEstablishments(filteredEstablishments);
+        
       } catch (err) {
-        console.error('Error loading data:', err);
+        console.error('❌ Error loading data:', err);
         setError('Failed to load data');
       } finally {
         setLoading(false);

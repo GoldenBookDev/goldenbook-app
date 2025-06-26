@@ -32,6 +32,101 @@ const iconMapping: { [key: string]: React.FC<any> } = {
   'activities': PeopleIcon,
 };
 
+// Mapeo correcto de IDs de ubicación a ciudades
+const cityMapping: { [key: string]: string } = {
+  'madeira': 'Madeira',
+  'lisboa': 'Lisboa', 
+  'porto': 'Porto',
+  'algarve': 'Algarve'
+};
+
+// Función para obtener contenido traducido
+const getTranslatedContent = (
+  translations: any,
+  field: string,
+  language: string = 'pt',
+  fallback: any = ''
+): any => {
+  if (translations && translations[field] && translations[field][language]) {
+    return translations[field][language];
+  }
+  return fallback;
+};
+
+// Función para normalizar un establecimiento desde Firestore
+const normalizeEstablishment = (doc: any): Establishment => {
+  const data = doc.data ? doc.data() : doc;
+  const currentLanguage = i18n.locale || 'pt';
+  
+  const shortDescription = getTranslatedContent(
+    data.translations, 
+    'shortDescription', 
+    currentLanguage, 
+    data.shortDescription || ''
+  );
+  
+  const fullDescription = getTranslatedContent(
+    data.translations, 
+    'fullDescription', 
+    currentLanguage, 
+    data.fullDescription || ''
+  );
+  
+  const openingHours = getTranslatedContent(
+    data.translations, 
+    'openingHours', 
+    currentLanguage, 
+    data.openingHours || ''
+  );
+  
+  const categories = getTranslatedContent(
+    data.translations, 
+    'categories', 
+    currentLanguage, 
+    data.categories || []
+  );
+  
+  const subcategories = getTranslatedContent(
+    data.translations, 
+    'subcategories', 
+    currentLanguage, 
+    data.subcategories || []
+  );
+  
+  return {
+    id: doc.id || data.id || '',
+    name: data.name || '',
+    shortDescription: shortDescription,
+    fullDescription: fullDescription,
+    mainImage: data.mainImage || '',
+    gallery: data.gallery || [],
+    address: data.address || '',
+    city: data.city || '',
+    phone: data.phone || '',
+    email: data.email || '',
+    website: data.website || '',
+    reservationLink: data.reservationLink || '',
+    openingHours: openingHours,
+    categories: categories,
+    subcategories: subcategories,
+    rating: data.rating || 0,
+    reviewCount: data.reviewCount || 0,
+    featured: data.featured || false,
+    trending: data.trending || false,
+    coordinates: data.coordinates || { latitude: 0, longitude: 0 },
+    createdAt: data.createdAt,
+    createdBy: data.createdBy,
+    lastModifiedAt: data.lastModifiedAt,
+    lastModifiedBy: data.lastModifiedBy,
+    migratedAt: data.migratedAt,
+    migrationSource: data.migrationSource,
+    stats: data.stats || { favoriteCount: 0 },
+    subscriptionValue: data.subscriptionValue || 0,
+    translations: data.translations || {},
+    version: data.version || 1
+  };
+};
+
 export const useHomeData = (route: any, navigation: any) => {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string>('');
@@ -39,109 +134,130 @@ export const useHomeData = (route: any, navigation: any) => {
   const [categories, setCategories] = useState<Array<{ id: string, title: string, icon: React.FC<any> }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Estados para establecimientos
+  // Estados simplificados - solo las secciones que queremos mostrar
   const [allEstablishments, setAllEstablishments] = useState<Establishment[]>([]);
-  const [recommendedEstablishments, setRecommendedEstablishments] = useState<Establishment[]>([]);
   const [featuredEstablishments, setFeaturedEstablishments] = useState<Establishment[]>([]);
   const [trendingEstablishments, setTrendingEstablishments] = useState<Establishment[]>([]);
-  const [newEstablishments, setNewEstablishments] = useState<Establishment[]>([]);
-  const [popularEstablishments, setPopularEstablishments] = useState<Establishment[]>([]);
-  const [topRatedEstablishments, setTopRatedEstablishments] = useState<Establishment[]>([]);
-
-  // Función para obtener establecimientos recomendados (aleatorios por ahora)
-  const getRecommendedEstablishments = (establishments: Establishment[]): Establishment[] => {
-    const shuffled = [...establishments].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 5);
-  };
-
-  // Función para obtener establecimientos más populares (por número de reseñas)
-  const getPopularEstablishments = (establishments: Establishment[]): Establishment[] => {
-    return [...establishments]
-      .filter(est => est.reviewCount > 0)
-      .sort((a, b) => b.reviewCount - a.reviewCount)
-      .slice(0, 5);
-  };
-
-  // Función para obtener establecimientos mejor valorados
-  const getTopRatedEstablishments = (establishments: Establishment[]): Establishment[] => {
-    return [...establishments]
-      .filter(est => est.rating >= 4.0)
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 5);
-  };
 
   useEffect(() => {
     const initializeData = async () => {
       try {
         setLoading(true);
 
-        // Cargar las categorías con traducciones
-        const categoriesData = await getCategories();
-        const formattedCategories = categoriesData.map(category => ({
-          id: category.id,
-          title: i18n.t(`categories.${category.id}`) || category.title,
-          icon: iconMapping[category.id] || HandsIcon
-        }));
-        setCategories(formattedCategories);
+        // Cargar categorías
+        try {
+          const categoriesData = await getCategories();
+          
+          const formattedCategories = categoriesData.map(category => ({
+            id: category.id,
+            title: i18n.t(`categories.${category.id}`) || category.title,
+            icon: iconMapping[category.id] || HandsIcon
+          }));
+          setCategories(formattedCategories);
+        } catch (error) {
+          console.error('❌ Error cargando categorías:', error);
+          setCategories([]);
+        }
 
+        // Obtener ubicación
         let location: string | null = route.params?.selectedLocation || null;
 
         if (!location) {
           location = await AsyncStorage.getItem('@goldenbook_selected_location');
 
           if (!location) {
-            navigation.replace('LocationSelection');
             return;
           }
+        } else {
+          console.log('📍 Ubicación desde params:', location);
         }
 
         setSelectedLocation(location);
 
-        const locationData = await getLocationById(location);
+        // Obtener datos de la ubicación
+        try {
+          const locationData = await getLocationById(location);
 
-        if (locationData) {
-          setLocationName(locationData.name);
-
-          // Usar imagen local en lugar de remota
-          const normalizedId = normalizeLocationId(locationData.name || location);
-          const localImage = getLocationImage(normalizedId, false);
-          setBackgroundImage(localImage);
-
-          // Obtener todos los establecimientos
-          const allEstablishmentsData = await getEstablishments(location);
-          setAllEstablishments(allEstablishmentsData);
-
-          // Establecimientos recomendados (aleatorios)
-          const recommended = getRecommendedEstablishments(allEstablishmentsData);
-          setRecommendedEstablishments(recommended);
-
-          // Establecimientos destacados (featured)
-          const featured = await getFeaturedEstablishments(location);
-          setFeaturedEstablishments(featured);
-
-          // Establecimientos en tendencia
-          const trending = await getTrendingEstablishments(location);
-          setTrendingEstablishments(trending);
-
-          // Establecimientos más populares (por reseñas)
-          const popular = getPopularEstablishments(allEstablishmentsData);
-          setPopularEstablishments(popular);
-
-          // Establecimientos mejor valorados
-          const topRated = getTopRatedEstablishments(allEstablishmentsData);
-          setTopRatedEstablishments(topRated);
-
-          // Establecimientos para descubrir (aleatorios diferentes)
-          const discover = getRecommendedEstablishments(allEstablishmentsData);
-          setNewEstablishments(discover);
-
-        } else {
-          setLocationName(location);
-          const localImage = getLocationImage(location, false);
-          setBackgroundImage(localImage);
+          if (locationData) {
+            setLocationName(locationData.name);
+            const normalizedId = normalizeLocationId(locationData.name || location);
+            const localImage = getLocationImage(normalizedId, false);
+            setBackgroundImage(localImage);
+          } else {
+            setLocationName(cityMapping[location] || location);
+            const localImage = getLocationImage(location, false);
+            setBackgroundImage(localImage);
+          }
+        } catch (error) {
+          console.error('❌ Error obteniendo datos de ubicación:', error);
+          setLocationName(cityMapping[location] || location);
+          setBackgroundImage(getLocationImage('default', false));
         }
+
+        // Obtener establecimientos
+        try {
+          
+          const rawEstablishmentsData = await getEstablishments(location);
+          
+          // Normalizar establecimientos
+          const allEstablishmentsData = rawEstablishmentsData.map(normalizeEstablishment);
+          
+          if (allEstablishmentsData.length > 0) {
+
+            setAllEstablishments(allEstablishmentsData);
+
+            // Obtener establecimientos destacados (featured)
+            try {
+              const rawFeatured = await getFeaturedEstablishments(location);
+              
+              if (rawFeatured.length > 0) {
+                const featured = rawFeatured.map(normalizeEstablishment);
+                setFeaturedEstablishments(featured);
+              } else {
+                // Fallback: filtrar localmente
+                const localFeatured = allEstablishmentsData.filter(est => est.featured);
+                setFeaturedEstablishments(localFeatured);
+              }
+            } catch (error) {
+              console.error('❌ Error obteniendo destacados:', error);
+              const localFeatured = allEstablishmentsData.filter(est => est.featured);
+              setFeaturedEstablishments(localFeatured);
+            }
+
+            // Obtener establecimientos trending
+            try {
+              const rawTrending = await getTrendingEstablishments(location);
+              
+              if (rawTrending.length > 0) {
+                const trending = rawTrending.map(normalizeEstablishment);
+                setTrendingEstablishments(trending);
+              } else {
+                // Fallback: filtrar localmente
+                const localTrending = allEstablishmentsData.filter(est => est.trending);
+                setTrendingEstablishments(localTrending);
+              }
+            } catch (error) {
+              console.error('❌ Error obteniendo trending:', error);
+              const localTrending = allEstablishmentsData.filter(est => est.trending);
+              setTrendingEstablishments(localTrending);
+            }
+
+          } else {
+            // Limpiar arrays
+            setAllEstablishments([]);
+            setFeaturedEstablishments([]);
+            setTrendingEstablishments([]);
+          }
+
+        } catch (error) {
+          console.error('❌ Error crítico obteniendo establecimientos:', error);
+          setAllEstablishments([]);
+          setFeaturedEstablishments([]);
+          setTrendingEstablishments([]);
+        }
+
       } catch (error) {
-        console.error('Error initializing data:', error);
+        console.error('❌ Error crítico inicializando datos:', error);
         setBackgroundImage(getLocationImage('default', false));
       } finally {
         setLoading(false);
@@ -151,6 +267,17 @@ export const useHomeData = (route: any, navigation: any) => {
     initializeData();
   }, [route.params?.selectedLocation]);
 
+  // Debug effect para monitorear cambios
+  useEffect(() => {
+    
+    if (allEstablishments.length > 0) {
+      const withImages = allEstablishments.filter(e => e.mainImage && e.mainImage.trim() !== '').length;
+      const featuredCount = allEstablishments.filter(e => e.featured).length;
+      const trendingCount = allEstablishments.filter(e => e.trending).length;
+
+    }
+  }, [selectedLocation, locationName, allEstablishments, featuredEstablishments, trendingEstablishments, loading]);
+
   return {
     selectedLocation,
     locationName,
@@ -158,11 +285,12 @@ export const useHomeData = (route: any, navigation: any) => {
     categories,
     loading,
     allEstablishments,
-    recommendedEstablishments,
     featuredEstablishments,
     trendingEstablishments,
-    newEstablishments,
-    popularEstablishments,
-    topRatedEstablishments
+    // Removemos todos los otros arrays que no necesitamos
+    recommendedEstablishments: [], 
+    newEstablishments: [],
+    popularEstablishments: [],
+    topRatedEstablishments: []
   };
 };

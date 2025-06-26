@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import i18n from '../i18n'; // ← IMPORTAR i18n
 import { RootStackParamList } from '../navigation/navigationTypes';
 
 // Import SVG components
@@ -93,6 +94,41 @@ const MapScreen: React.FC<MapScreenProps> = ({ route, navigation }) => {
     locationPermissionGranted,
     centerOnUserLocation
   } = useMapLocation();
+
+  // ========== FUNCIÓN PARA TRADUCIR CATEGORÍAS ==========
+  const getTranslatedCategoryTitle = (category: any) => {
+    // Mapeo de títulos en inglés a claves de traducción
+    const categoryKeyMapping: { [key: string]: string } = {
+      'Stay & Do': 'activities',
+      'Nature': 'beaches',
+      'Culture': 'culture',
+      'Events': 'events',
+      'Food & Drinks': 'gastronomy',
+      'Shopping': 'shops',
+      'Sports': 'sports',
+      'Transport': 'transport'
+    };
+
+    // Intentar obtener la clave de traducción
+    let translationKey = category.id; // Usar ID como fallback
+
+    if (category.title && categoryKeyMapping[category.title]) {
+      translationKey = categoryKeyMapping[category.title];
+    } else if (categoryKeyMapping[category.id]) {
+      translationKey = categoryKeyMapping[category.id];
+    }
+
+    // Obtener la traducción
+    const translated = i18n.t(`categories.${translationKey}`, { defaultValue: category.title });
+
+    return translated;
+  };
+
+  // ========== PROCESAR CATEGORÍAS CON TRADUCCIONES ==========
+  const translatedCategories = categories.map(category => ({
+    ...category,
+    translatedTitle: getTranslatedCategoryTitle(category)
+  }));
 
   // Establecer región inicial cuando se carga la ubicación
   useEffect(() => {
@@ -231,7 +267,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ route, navigation }) => {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={styles.loadingText}>Cargando mapa...</Text>
+        <Text style={styles.loadingText}>{i18n.t('map.loading', { defaultValue: 'Cargando mapa...' })}</Text>
       </View>
     );
   }
@@ -285,7 +321,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ route, navigation }) => {
 
         {/* Filtros de categorías */}
         <CategoryFilters
-          categories={categories}
+          categories={translatedCategories}
           selectedCategory={selectedCategory}
           onCategoryPress={handleCategoryFilter}
         />
@@ -295,13 +331,14 @@ const MapScreen: React.FC<MapScreenProps> = ({ route, navigation }) => {
       <MapControls
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
-        onCenterLocation={handleCenterLocation}
+        onCenterLocation={locationPermissionGranted ? handleCenterLocation : undefined}
+        showLocationButton={locationPermissionGranted}
       />
 
       {/* Tarjeta de detalles del marcador seleccionado */}
       <MarkerDetailsCard
         establishment={selectedEstablishment}
-        categories={categories}
+        categories={translatedCategories}
         onClose={() => setSelectedMarker(null)}
         onPress={handleMarkerCardPress}
       />
@@ -357,6 +394,12 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     fontFamily: 'EuclidSquare-Regular',
     color: '#1A1A2E',
+  },
+  offlineIndicator: {
+    marginHorizontal: 0,
+    marginVertical: 0,
+    paddingHorizontal: width * 0.04,
+    paddingVertical: width * 0.015,
   },
 });
 

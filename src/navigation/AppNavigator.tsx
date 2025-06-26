@@ -44,7 +44,6 @@ const AppNavigator: React.FC = () => {
   // Manejar deep links cuando la app se abre
   useEffect(() => {
     const handleDeepLink = (url: string) => {
-      console.log('🔗 Deep link recibido:', url);
       // El NavigationContainer manejará automáticamente la navegación
     };
 

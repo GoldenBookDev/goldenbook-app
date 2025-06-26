@@ -9,7 +9,6 @@ export interface LocationData {
 
 export const requestLocationPermission = async (): Promise<boolean> => {
   try {
-    console.log('🚀 About to request location permission...');
     
     // Esto SÍ debe mostrar el diálogo nativo del sistema
     const result = await Location.requestForegroundPermissionsAsync();    

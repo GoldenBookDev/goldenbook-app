@@ -29,6 +29,7 @@ import CategoryTitle from '../components/CategoryTitle';
 import EstablishmentItem from '../components/EstablishmentItem';
 import EstablishmentsFilter from '../components/EstablishmentsFilter';
 import FloatingMapButton from '../components/FloatingMapButton';
+import OfflineIndicator from '../components/OfflineIndicator';
 import SearchBar from '../components/SearchBar';
 import SearchDropdown from '../components/SearchDropdown';
 import SubcategoriesFilter from '../components/SubcategoriesFilter';
@@ -97,6 +98,41 @@ const CategoryScreen = ({ route, navigation }: CategoryScreenProps) => {
     handleLikeToggle
   } = useUserActions(navigation);
 
+  // ========== FUNCIÓN PARA TRADUCIR SUBCATEGORÍAS ==========
+  const getTranslatedSubcategory = (subcategoryKey: string) => {
+    return i18n.t(`subcategories.${subcategoryKey}`, { defaultValue: subcategoryKey });
+  };
+
+  // ========== FUNCIÓN PARA TRADUCIR TÍTULO DE CATEGORÍA ==========
+  const getTranslatedCategoryTitle = (title: string) => {
+    // Mapeo de títulos en inglés a claves de traducción
+    const categoryKeyMapping: { [key: string]: string } = {
+      'Stay & Do': 'activities',
+      'Nature': 'beaches',
+      'Culture': 'culture',
+      'Events': 'events',
+      'Food & Drinks': 'gastronomy',
+      'Shopping': 'shops',
+      'Sports': 'sports',
+      'Transport': 'transport'
+    };
+
+    const translationKey = categoryKeyMapping[title] || categoryId;
+    return i18n.t(`categories.${translationKey}`, { defaultValue: title });
+  };
+
+  // ========== FUNCIÓN CORREGIDA PARA SEARCH DROPDOWN ==========
+  const handleSelectEstablishmentById = (establishmentId: string) => {
+    // Encontrar el establishment por ID en los resultados de búsqueda
+    const establishment = searchResults.find(est => est.id === establishmentId);
+    if (establishment) {
+      handleSelectEstablishment(establishment);
+    } else {
+      // Fallback: navegar directamente con el ID
+      navigation.navigate('EstablishmentScreen', { establishmentId });
+    }
+  };
+
   // Render functions
   const renderEstablishmentItem = ({ item }: { item: any }) => (
     <EstablishmentItem
@@ -110,7 +146,7 @@ const CategoryScreen = ({ route, navigation }: CategoryScreenProps) => {
       onLikeToggle={() => handleLikeToggle(item.id, (increment) =>
         updateEstablishmentReviewCount(item.id, increment)
       )}
-      showCategory={false} // No mostrar categoría en vista de categoría específica
+      showCategory={false}
     />
   );
 
@@ -119,12 +155,12 @@ const CategoryScreen = ({ route, navigation }: CategoryScreenProps) => {
       <View style={styles.titleSection}>
         <CategoryTitle
           icon={iconMapping[categoryId] || HandsIcon}
-          title={categoryTitle}
+          title={getTranslatedCategoryTitle(categoryTitle)}
         />
 
         <View style={styles.searchContainer}>
           <SearchBar
-            placeholder={`${i18n.t('category.searchIn')} ${categoryTitle}`}
+            placeholder={`${i18n.t('category.searchIn')} ${getTranslatedCategoryTitle(categoryTitle)}`}
             value={searchQuery}
             onChangeText={handleSearchChange}
             onFocus={handleSearchFocus}
@@ -135,10 +171,14 @@ const CategoryScreen = ({ route, navigation }: CategoryScreenProps) => {
         </View>
       </View>
 
+      {/* ========== INDICADOR OFFLINE AQUÍ ========== */}
+      <OfflineIndicator />
+
       <SubcategoriesFilter
         subcategories={subcategories}
         selectedSubcategory={selectedSubcategory}
         onSubcategorySelect={setSelectedSubcategory}
+        getTranslatedSubcategory={getTranslatedSubcategory}
       />
 
       <EstablishmentsFilter
@@ -167,7 +207,7 @@ const CategoryScreen = ({ route, navigation }: CategoryScreenProps) => {
       <View style={styles.dropdownWrapper}>
         <SearchDropdown
           results={searchResults}
-          onSelectEstablishment={handleSelectEstablishment}
+          onSelectEstablishment={handleSelectEstablishmentById}
           onShowAllResults={handleShowAllResults}
           visible={true}
         />

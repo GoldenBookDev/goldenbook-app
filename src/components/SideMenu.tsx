@@ -42,6 +42,53 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
     return auth.user?.providerData?.some(provider => provider.providerId === 'google.com') || false;
   };
 
+  // Función para generar iniciales desde el email
+  const getInitialsFromEmail = (email: string): string => {
+    if (!email) return 'U';
+    const username = email.split('@')[0];
+    // Tomar las primeras dos letras del username
+    return username.substring(0, 2).toUpperCase();
+  };
+
+  // Función para obtener el nombre a mostrar
+  const getDisplayName = () => {
+    if (userData?.displayName && userData.displayName.trim()) {
+      return userData.displayName;
+    }
+
+    if (userData?.firstName && userData?.lastName) {
+      return `${userData.firstName} ${userData.lastName}`.trim();
+    }
+
+    if (userData?.firstName && userData.firstName.trim()) {
+      return userData.firstName;
+    }
+
+    if (userData?.email) {
+      // Extraer el nombre del usuario del email (parte antes del @)
+      const username = userData.email.split('@')[0];
+      // Capitalizar la primera letra y formatear
+      return username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+    }
+
+    return i18n.t('menu.user'); // "Usuario" o "User" según idioma
+  };
+
+  // Función para mostrar el saludo personalizado
+  const getGreeting = () => {
+    const displayName = getDisplayName();
+    return i18n.t('menu.hello', { name: displayName }); // "Hola, {name}" o "Hello, {name}"
+  };
+
+  // Función para verificar si necesita completar perfil
+  const needsProfileCompletion = () => {
+    if (isGoogleUser()) return false;
+
+    return !userData?.displayName ||
+      !userData?.displayName.trim() ||
+      (!userData?.firstName && !userData?.lastName);
+  };
+
   // Actualizar datos de usuario directamente desde AuthContext
   useEffect(() => {
     if (auth.userData) {
@@ -49,7 +96,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
     } else if (auth.user) {
       // Usar datos del usuario de Firebase si no hay userData
       setUserData({
-        displayName: auth.user.displayName || 'Usuario',
+        displayName: auth.user.displayName || '',
         email: auth.user.email || '',
         photoURL: auth.user.photoURL || null
       });
@@ -78,8 +125,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
     try {
       // Usar la función de logout del AuthContext
       await auth.logout();
-
-      console.log("Logout completado, redirigiendo a LoginStep1");
 
       // Navegar a la pantalla de login
       navigation.reset({
@@ -155,20 +200,41 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
             {/* Información del usuario */}
             <View style={styles.userInfoContainer}>
               <View style={styles.userAvatar}>
-                <Image
-                  source={
-                    userData?.photoURL
-                      ? { uri: userData.photoURL }
-                      : require('../assets/images/default-avatar.png')
-                  }
-                  style={styles.avatarImage}
-                />
+                {userData?.photoURL ? (
+                  <Image
+                    source={{ uri: userData.photoURL }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text style={styles.avatarInitials}>
+                      {getInitialsFromEmail(userData?.email || '')}
+                    </Text>
+                  </View>
+                )}
               </View>
-              <Text style={styles.userName}>{userData?.displayName || 'John Doe'}</Text>
-              <Text style={styles.userEmail}>{userData?.email || 'john.doe@example.com'}</Text>
 
-              {/* Solo mostrar botón de editar perfil si NO es usuario de Google */}
-              {!isGoogleUser() && (
+              {/* Usar el nombre personalizado */}
+              <Text style={styles.userName}>{getDisplayName()}</Text>
+              <Text style={styles.userEmail}>{userData?.email || ''}</Text>
+
+              {/* Mostrar indicador si necesita completar perfil */}
+              {needsProfileCompletion() && (
+                <TouchableOpacity
+                  style={styles.completeProfileButton}
+                  onPress={() => {
+                    onClose();
+                    navigation.navigate('ProfileScreen');
+                  }}
+                >
+                  <Text style={styles.completeProfileText}>
+                    {i18n.t('menu.completeProfile')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Botón de editar perfil normal para usuarios no-Google */}
+              {!isGoogleUser() && !needsProfileCompletion() && (
                 <TouchableOpacity
                   style={styles.editProfileButton}
                   onPress={() => {
@@ -268,6 +334,18 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
+  avatarFallback: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#4A90E2',
+  },
+  avatarInitials: {
+    fontSize: width * 0.08,
+    fontFamily: 'EuclidSquare-SemiBold',
+    color: 'white',
+  },
   userName: {
     fontSize: width * 0.045,
     fontFamily: 'EuclidSquare-SemiBold',
@@ -290,6 +368,17 @@ const styles = StyleSheet.create({
     fontSize: width * 0.035,
     fontFamily: 'EuclidSquare-Medium',
     color: '#1A1A2E',
+  },
+  completeProfileButton: {
+    paddingVertical: width * 0.02,
+    paddingHorizontal: width * 0.04,
+    backgroundColor: '#4A90E2',
+    borderRadius: 50,
+  },
+  completeProfileText: {
+    fontSize: width * 0.035,
+    fontFamily: 'EuclidSquare-Medium',
+    color: 'white',
   },
   googleUserText: {
     fontSize: width * 0.03,

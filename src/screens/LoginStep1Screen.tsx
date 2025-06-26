@@ -13,8 +13,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { useAuth } from '../context/AuthContext'; // Agregar esta importación
 import useAuthentication from '../hooks/useAuthentication';
-import i18n from '../i18n'; // Importar i18n
+import i18n from '../i18n';
 import { isValidEmail } from '../utils/validation';
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -22,7 +23,8 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const { loginWithGoogle } = useAuthentication();
+  const { loginWithGoogle, loginAsGuest } = useAuthentication();
+  const { setAsGuest } = useAuth(); // Obtener setAsGuest del contexto
 
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     androidClientId: '659096031354-rkpvbl0neg4kusuvvq0gijio5jlhc8tl.apps.googleusercontent.com',
@@ -79,6 +81,37 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     navigation.navigate('LoginStep2', { email });
   };
 
+  // FUNCIÓN PARA MANEJAR CONTINUAR SIN CUENTA
+  const handleContinueWithoutAccount = async () => {
+    try {
+      setIsLoggingIn(true);
+
+      // Usar setAsGuest del contexto para establecer el modo invitado
+      await setAsGuest();
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'LocationSelection' }],
+      });
+    } catch (error) {
+      console.error("Error al establecer modo invitado:", error);
+
+      // Intentar de manera alternativa usando loginAsGuest
+      try {
+        await loginAsGuest();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'LocationSelection' }],
+        });
+      } catch (fallbackError) {
+        console.error("Error en fallback:", fallbackError);
+        Alert.alert('Error', 'No se pudo entrar en modo invitado');
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{i18n.t('auth.loginTitle')}</Text>
@@ -133,9 +166,12 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <Text style={styles.signupLink}>{i18n.t('auth.signUp')}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* BOTÓN PARA CONTINUAR SIN CUENTA */}
       <TouchableOpacity
         style={styles.linkContainer}
-        onPress={() => navigation.navigate('LocationSelection')}
+        onPress={handleContinueWithoutAccount}
+        disabled={isLoggingIn}
       >
         <Text style={styles.link}>{i18n.t('auth.continueWithoutAccount')}</Text>
       </TouchableOpacity>

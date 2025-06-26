@@ -4,9 +4,11 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -14,16 +16,23 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../hooks/useLocation';
+import { useNetworkStatus } from '../hooks/useNetworkStatus'; // ← NUEVO IMPORT
 import i18n from '../i18n';
 
 import ArrowLeftIcon from '../assets/images/icons/arrow-left-bg.svg';
 import EyeOffIcon from '../assets/images/icons/eye-off.svg';
 import EyeIcon from '../assets/images/icons/eye.svg';
 
+// ← NUEVO IMPORT
+import CacheStatsModal from '../components/CacheStatsModal';
+
 const { width } = Dimensions.get('window');
 
 const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { user, logout, deleteAccount } = useAuth();
+  const { hasPermission, requestPermission } = useLocation();
+  const { isConnected } = useNetworkStatus(); // ← NUEVO HOOK
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -39,6 +48,9 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   // Estados para el selector de idiomas
   const [currentLanguage, setCurrentLanguage] = useState<'pt' | 'en'>(i18n.locale as 'pt' | 'en');
   const [changingLanguage, setChangingLanguage] = useState(false);
+
+  // ← NUEVO ESTADO PARA CACHE MODAL
+  const [showCacheStats, setShowCacheStats] = useState(false);
 
   // Función para verificar si el usuario se logueó con Google
   const isGoogleUser = () => {
@@ -75,21 +87,45 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     setChangingLanguage(true);
     try {
-      // Cambiar idioma en i18n
       i18n.locale = language;
       setCurrentLanguage(language);
-
-      // Guardar preferencia en AsyncStorage
       await AsyncStorage.setItem('@goldenbook_language', language);
-
-      // Pequeña pausa para mostrar el cambio visual
       setTimeout(() => {
         setChangingLanguage(false);
       }, 300);
-
     } catch (error) {
       console.error('Error changing language:', error);
       setChangingLanguage(false);
+    }
+  };
+
+  // Manejar toggle de ubicación
+  const handleLocationToggle = async (value: boolean) => {
+    if (value) {
+      // Si el usuario quiere activar ubicación, pedir permiso
+      await requestPermission();
+    } else {
+      // Si quiere desactivar, mostrar modal para ir a configuraciones
+      Alert.alert(
+        i18n.t('location.permissionTitle'),
+        i18n.t('location.goToSettingsMessage'),
+        [
+          {
+            text: i18n.t('common.cancel'),
+            style: 'cancel',
+          },
+          {
+            text: i18n.t('common.settings'),
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:');
+              } else {
+                Linking.openSettings();
+              }
+            },
+          },
+        ]
+      );
     }
   };
 
@@ -315,6 +351,95 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
           </View>
 
+          {/* ========== NUEVA SECCIÓN DE CACHE OFFLINE ========== */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {currentLanguage === 'en' ? 'Offline Mode' : 'Modo Offline'}
+            </Text>
+            <Text style={styles.sectionSubtitle}>
+              {currentLanguage === 'en'
+                ? 'Manage offline data and cache settings.'
+                : 'Gerir dados offline e configurações de cache.'
+              }
+            </Text>
+
+            <View style={styles.cacheContainer}>
+              {/* Estado de Conexión */}
+              <View style={[
+                styles.connectionStatus,
+                isConnected ? styles.onlineStatus : styles.offlineStatus
+              ]}>
+                <View style={[
+                  styles.connectionIndicator,
+                  isConnected ? styles.onlineIndicator : styles.offlineIndicator
+                ]} />
+                <Text style={[
+                  styles.connectionText,
+                  isConnected ? styles.onlineText : styles.offlineText
+                ]}>
+                  {isConnected
+                    ? (currentLanguage === 'en' ? 'Online' : 'Online')
+                    : (currentLanguage === 'en' ? 'Offline' : 'Offline')
+                  }
+                </Text>
+              </View>
+
+              {/* Descripción */}
+              <Text style={styles.cacheDescription}>
+                {currentLanguage === 'en'
+                  ? 'The app saves data locally so you can browse establishments even without internet connection.'
+                  : 'A aplicação guarda dados localmente para que possa navegar pelos estabelecimentos mesmo sem ligação à internet.'
+                }
+              </Text>
+
+              {/* Botón para ver estadísticas */}
+              <TouchableOpacity
+                style={styles.cacheButton}
+                onPress={() => setShowCacheStats(true)}
+              >
+                <Text style={styles.cacheButtonText}>
+                  {currentLanguage === 'en' ? 'View Cache Statistics' : 'Ver Estatísticas do Cache'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Sección de Ubicación */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {i18n.t('location.permissionTitle')}
+            </Text>
+            <Text style={styles.sectionSubtitle}>
+              {i18n.t('location.permissionDescription')}
+            </Text>
+
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleContent}>
+                <Text style={styles.toggleLabel}>
+                  {i18n.t('location.allowAccess')}
+                </Text>
+                <Text style={styles.toggleDescription}>
+                  {i18n.t('location.benefit1')}
+                </Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#E9ECEF', true: '#E8A756' }}
+                thumbColor={hasPermission ? '#FFFFFF' : '#FFFFFF'}
+                ios_backgroundColor="#E9ECEF"
+                onValueChange={handleLocationToggle}
+                value={hasPermission}
+              />
+            </View>
+
+            {!hasPermission && (
+              <View style={styles.locationNoticeContainer}>
+                <Text style={styles.locationNoticeText}>
+                  {i18n.t('location.privacyNote')}
+                </Text>
+              </View>
+            )}
+          </View>
+
           {/* Solo mostrar sección de cambio de contraseña para usuarios que NO son de Google */}
           {!isGoogleUser() && (
             <View style={styles.section}>
@@ -438,6 +563,12 @@ const SettingsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         </View>
       </ScrollView>
+
+      {/* ========== MODAL DE CACHE STATS ========== */}
+      <CacheStatsModal
+        visible={showCacheStats}
+        onClose={() => setShowCacheStats(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -490,6 +621,69 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-Regular',
     color: '#6C757D',
     marginBottom: width * 0.05,
+  },
+  // ========== NUEVOS ESTILOS PARA CACHE ========== 
+  cacheContainer: {
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    padding: width * 0.04,
+  },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: width * 0.02,
+    paddingHorizontal: width * 0.03,
+    borderRadius: 8,
+    marginBottom: width * 0.03,
+  },
+  onlineStatus: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+  },
+  offlineStatus: {
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+  },
+  connectionIndicator: {
+    width: width * 0.025,
+    height: width * 0.025,
+    borderRadius: width * 0.0125,
+    marginRight: width * 0.02,
+  },
+  onlineIndicator: {
+    backgroundColor: '#4CAF50',
+  },
+  offlineIndicator: {
+    backgroundColor: '#FF9800',
+  },
+  connectionText: {
+    fontSize: width * 0.035,
+    fontFamily: 'EuclidSquare-Medium',
+  },
+  onlineText: {
+    color: '#4CAF50',
+  },
+  offlineText: {
+    color: '#FF9800',
+  },
+  cacheDescription: {
+    fontSize: width * 0.034,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#6C757D',
+    lineHeight: width * 0.048,
+    marginBottom: width * 0.04,
+  },
+  cacheButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: width * 0.03,
+    paddingHorizontal: width * 0.04,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cacheButtonText: {
+    fontSize: width * 0.037,
+    fontFamily: 'EuclidSquare-Medium',
+    color: '#FFFFFF',
   },
   // Estilos para el selector de idiomas
   languageContainer: {
@@ -545,6 +739,44 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: width * 0.035,
     fontWeight: 'bold',
+  },
+  // Estilos para toggle de ubicación
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: width * 0.04,
+    paddingVertical: width * 0.04,
+  },
+  toggleContent: {
+    flex: 1,
+    marginRight: width * 0.03,
+  },
+  toggleLabel: {
+    fontSize: width * 0.04,
+    fontFamily: 'EuclidSquare-Medium',
+    color: '#1A1A2E',
+    marginBottom: width * 0.005,
+  },
+  toggleDescription: {
+    fontSize: width * 0.035,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#6C757D',
+  },
+  locationNoticeContainer: {
+    backgroundColor: '#F8F9FA',
+    padding: width * 0.04,
+    borderRadius: 8,
+    marginTop: width * 0.03,
+  },
+  locationNoticeText: {
+    fontSize: width * 0.035,
+    fontFamily: 'EuclidSquare-Regular',
+    color: '#6C757D',
   },
   googleNoticeContainer: {
     backgroundColor: '#E3F2FD',

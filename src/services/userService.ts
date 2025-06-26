@@ -1,15 +1,17 @@
 // src/services/userService.ts
-import { db } from '../config/firebaseConfig';
-import { 
-  doc, 
-  getDoc, 
-  updateDoc, 
-  arrayUnion, 
-  arrayRemove, 
+import * as FileSystem from 'expo-file-system';
+import {
+  arrayRemove,
+  arrayUnion,
+  deleteDoc,
+  doc,
+  getDoc,
   increment,
-  setDoc, 
-  deleteDoc
+  setDoc,
+  updateDoc
 } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
+
 
 // Añadir un establecimiento a favoritos
 export const addToFavorites = async (userId: string, establishmentId: string): Promise<boolean> => {
@@ -329,9 +331,146 @@ export const isLiked = async (userId: string, establishmentId: string): Promise<
 export const deleteUserProfile = async (userId: string) => {
   try {
     await deleteDoc(doc(db, 'users', userId));
-    console.log('User profile deleted from Firestore');
   } catch (error) {
     console.error('Error deleting user profile:', error);
     throw error;
+  }
+};
+
+export const saveUserPreferences = async (userId: string, preferences: any, userProfile?: any) => {
+  try {
+    const userData: any = {
+      preferences: {
+        marketingConsent: preferences.marketingConsent || false,
+        termsAcceptedAt: preferences.termsAcceptedAt || new Date(),
+        privacyPolicyAcceptedAt: preferences.privacyPolicyAcceptedAt || new Date(),
+        language: preferences.language || 'en' // o detectar idioma del dispositivo
+      }
+    };
+
+    // Si se proporciona información de perfil, añadirla
+    if (userProfile) {
+      userData.profile = {
+        displayName: userProfile.displayName || '',
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        email: userProfile.email || '',
+        photoURL: userProfile.photoURL || '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        profileUpdated: false
+      };
+    }
+
+    // Inicializar arrays vacíos para favoritos, bookmarks, etc.
+    userData.favorites = [];
+    userData.bookmarks = [];
+    userData.likes = [];
+
+    await setDoc(doc(db, 'users', userId), userData, { merge: true });
+  } catch (error) {
+    console.error('Error saving user preferences:', error);
+    throw error;
+  }
+};
+
+/**
+ * Sube una imagen de perfil usando tu preset personalizado de Cloudinary
+ * CONFIGURADO PARA: dyvabmauq con preset goldenbook_profiles
+ */
+export const uploadProfileImage = async (userId: string, imageUri: string): Promise<string | null> => {
+  try {
+    // Leer la imagen como base64
+    const base64 = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    // Tu configuración personalizada de Cloudinary
+    const cloudName = 'dyvabmauq';
+    const uploadPreset = 'goldenbook_profiles';
+    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+    
+    const formData = new FormData();
+    formData.append('file', `data:image/jpeg;base64,${base64}`);
+    formData.append('upload_preset', uploadPreset);
+    formData.append('public_id', `user_${userId}_${Date.now()}`);
+
+    const response = await fetch(cloudinaryUrl, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Cloudinary error response:', errorText);
+      
+      // Fallback: guardar localmente si Cloudinary falla
+      return await saveImageLocally(userId, imageUri);
+    }
+
+    const result = await response.json();
+    return result.secure_url;
+    
+  } catch (error: any) {
+    console.error('Error uploading to Cloudinary:', error);
+    
+    // Fallback: guardar localmente
+    return await saveImageLocally(userId, imageUri);
+  }
+};
+
+/**
+ * Fallback: Guardar localmente
+ */
+const saveImageLocally = async (userId: string, imageUri: string): Promise<string | null> => {
+  try {
+   
+    const timestamp = Date.now();
+    const fileName = `profile_${userId}_${timestamp}.jpg`;
+    const documentDirectory = FileSystem.documentDirectory;
+    const localUri = `${documentDirectory}${fileName}`;
+    
+    await FileSystem.copyAsync({
+      from: imageUri,
+      to: localUri,
+    });
+
+    return localUri;
+  } catch (error: any) {
+    console.error('Local save failed:', error);
+    return 'https://via.placeholder.com/150/4A90E2/FFFFFF?text=User';
+  }
+};
+
+/**
+ * Elimina una imagen de perfil
+ */
+export const deleteProfileImage = async (imageUrl: string): Promise<void> => {
+  try {
+    // TODO: Implementar eliminación de Cloudinary si es necesario
+  } catch (error: any) {
+    console.warn('Error deleting image:', error);
+  }
+};
+
+/**
+ * Actualiza la imagen de perfil
+ */
+export const updateProfileImage = async (
+  userId: string, 
+  newImageUri: string, 
+  previousImageUrl?: string
+): Promise<string | null> => {
+  try {
+    const newImageUrl = await uploadProfileImage(userId, newImageUri);
+    
+    if (newImageUrl && previousImageUrl) {
+      deleteProfileImage(previousImageUrl).catch(console.warn);
+    }
+    
+    return newImageUrl;
+  } catch (error: any) {
+    console.error('Error updating profile image:', error);
+    return null;
   }
 };

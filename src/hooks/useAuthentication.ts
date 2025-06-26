@@ -1,19 +1,17 @@
-import { useState } from 'react';
-import { auth } from '../config/firebaseConfig';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  GoogleAuthProvider,
-  signInWithCredential,
-  sendPasswordResetEmail,
-  sendEmailVerification,
-  signOut,
-  UserCredential
-} from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signInWithCredential,
+  signInWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import { auth, db } from '../config/firebaseConfig';
 import { useAuth } from '../context/AuthContext';
-import { doc, updateDoc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
 
 export const useAuthentication = () => {
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +58,6 @@ const registerWithEmail = async (email: string, password: string): Promise<boole
         favorites: [],   // Array vacío para favoritos
         bookmarks: []    // Array vacío para marcadores
       });
-      console.log("✅ Perfil de usuario creado en Firestore");
     } catch (firestoreError) {
       console.error("❌ Error al crear perfil de usuario:", firestoreError);
       // Continuar aunque falle Firestore
@@ -163,13 +160,11 @@ const loginWithGoogle = async (idToken: string): Promise<boolean> => {
           favorites: [],
           bookmarks: []
         });
-        console.log("✅ Perfil de usuario creado en Firestore para usuario de Google");
       } else {
         // Solo actualizar una vez
         await updateDoc(userDocRef, {
           'profile.updatedAt': new Date()
         });
-        console.log("✅ Información de usuario actualizada en Firestore");
       }
     } catch (firestoreError) {
       console.error("❌ Error al gestionar perfil de usuario:", firestoreError);

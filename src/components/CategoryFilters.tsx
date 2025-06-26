@@ -13,6 +13,7 @@ interface CategoryWithIcon {
     id: string;
     title: string;
     icon: React.FC<any>;
+    translatedTitle?: string; // ← NUEVA PROPIEDAD OPCIONAL
 }
 
 interface CategoryFiltersProps {
@@ -35,6 +36,9 @@ const CategoryFilters: React.FC<CategoryFiltersProps> = ({
         >
             {categories.map((category) => {
                 const Icon = category.icon;
+                // Usar translatedTitle si existe, sino usar title original
+                const displayTitle = category.translatedTitle || category.title;
+
                 return (
                     <TouchableOpacity
                         key={category.id}
@@ -51,7 +55,9 @@ const CategoryFilters: React.FC<CategoryFiltersProps> = ({
                         <Text style={[
                             categoryStyles.categoryButtonText,
                             selectedCategory === category.id && categoryStyles.categoryButtonTextSelected
-                        ]}>{category.title}</Text>
+                        ]}>
+                            {displayTitle} {/* ← USAR TÍTULO TRADUCIDO */}
+                        </Text>
                     </TouchableOpacity>
                 );
             })}

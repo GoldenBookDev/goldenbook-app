@@ -21,12 +21,14 @@ interface SubcategoriesFilterProps {
     subcategories: SubcategoryData[];
     selectedSubcategory: string | null;
     onSubcategorySelect: (subcategoryId: string | null) => void;
+    getTranslatedSubcategory: (subcategoryKey: string) => string; // ← AÑADIDA ESTA PROP
 }
 
 const SubcategoriesFilter: React.FC<SubcategoriesFilterProps> = ({
     subcategories,
     selectedSubcategory,
-    onSubcategorySelect
+    onSubcategorySelect,
+    getTranslatedSubcategory // ← NUEVA PROP
 }) => {
     if (subcategories.length === 0) return null;
 
@@ -62,7 +64,7 @@ const SubcategoriesFilter: React.FC<SubcategoriesFilterProps> = ({
                             subStyles.subcategoryText,
                             selectedSubcategory === item.id && subStyles.subcategoryTextActive
                         ]}>
-                            {item.title}
+                            {getTranslatedSubcategory(item.id)} {/* ← USAR TRADUCCIÓN EN LUGAR DE item.title */}
                         </Text>
                     </TouchableOpacity>
                 ))}

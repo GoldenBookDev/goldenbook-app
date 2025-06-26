@@ -39,12 +39,10 @@ const initializeLanguage = async () => {
     if (savedLanguage && (savedLanguage === 'pt' || savedLanguage === 'en')) {
       // Usuario ya eligió un idioma previamente
       i18n.locale = savedLanguage;
-      console.log('🌍 Idioma cargado desde preferencias:', savedLanguage);
     } else {
       // Primera vez: detectar idioma del dispositivo
       const deviceLanguage = getDeviceLanguage();
       i18n.locale = deviceLanguage;
-      console.log('🌍 Idioma detectado del dispositivo:', deviceLanguage);
       
       // Guardar la detección automática como preferencia inicial
       await AsyncStorage.setItem('@goldenbook_language', deviceLanguage);

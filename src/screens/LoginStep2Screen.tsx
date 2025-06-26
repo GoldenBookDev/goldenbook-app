@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import i18n from '../i18n'; // Importar i18n
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { loginUser } from '../services/authService';
-import i18n from '../i18n'; // Importar i18n
 
 type LoginStep2Props = NativeStackScreenProps<RootStackParamList, 'LoginStep2'>;
 
@@ -24,7 +24,6 @@ const LoginStep2Screen: React.FC<LoginStep2Props> = ({ route, navigation }) => {
   const handleLogin = async () => {
     try {
       const user = await loginUser(email, password);
-      alert(`Welcome back, ${user?.email}`);
       navigation.navigate('HomeScreen', {});
     } catch (error: any) {
       alert(error.message);
@@ -122,7 +121,7 @@ const styles = StyleSheet.create({
     paddingVertical: '4%',
     paddingHorizontal: '5%',
     fontFamily: 'EuclidSquare-Regular',
-    fontSize: Dimensions.get('window').width * 0.035,
+    fontSize: Dimensions.get('window').width * 0.04,
     color: '#161B33',
   },
   eyeIcon: {

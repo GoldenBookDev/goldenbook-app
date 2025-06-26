@@ -51,12 +51,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     categories,
     loading,
     allEstablishments,
-    recommendedEstablishments,
     featuredEstablishments,
-    trendingEstablishments,
-    newEstablishments,
-    popularEstablishments,
-    topRatedEstablishments
+    trendingEstablishments
   } = useHomeData(route, navigation);
 
   const {
@@ -106,25 +102,50 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     });
   }, []);
 
+  // Función para calcular distancia entre dos puntos
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radio de la Tierra en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
   // Efecto para cargar establecimientos cercanos cuando se otorgan permisos
   useEffect(() => {
     const loadNearbyEstablishments = async () => {
       if (hasPermission && location && allEstablishments.length > 0) {
         try {
-          // Aquí implementarías la lógica para filtrar establecimientos por distancia
-          // Por ahora, tomamos una muestra de los establecimientos disponibles
           const nearby = allEstablishments
-            .slice(0, 8) // Tomar los primeros 8 como ejemplo
-            .map(establishment => ({
-              ...establishment,
-              distance: Math.random() * 5 + 0.1 // Distancia simulada en km
-            }))
-            .sort((a, b) => a.distance - b.distance);
+            .map(establishment => {
+              // Verificar que el establecimiento tenga coordenadas
+              if (!establishment.coordinates?.latitude || !establishment.coordinates?.longitude) {
+                return null;
+              }
+
+              const distance = calculateDistance(
+                location.latitude,
+                location.longitude,
+                establishment.coordinates.latitude,
+                establishment.coordinates.longitude
+              );
+
+              return { ...establishment, distance };
+            })
+            .filter((establishment): establishment is typeof establishment & { distance: number } =>
+              establishment !== null && establishment.distance <= 30
+            )
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 6);
 
           setNearbyEstablishments(nearby);
         } catch (error) {
-          console.log('Error loading nearby establishments:', error);
         }
+      } else {
+        // Si no hay permisos o ubicación, limpiar la lista
+        setNearbyEstablishments([]);
       }
     };
 
@@ -299,7 +320,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
               onCategoryPress={handleCategoryPress}
             />
 
-            {/* Sección "Near me" - Solo se muestra si hay permisos de ubicación */}
+            {/* ============ SOLO 3 SECCIONES ============ */}
+
+            {/* 1. Sección "Near me" - Solo se muestra si hay permisos de ubicación */}
             {hasPermission && nearbyEstablishments.length > 0 && (
               <EstablishmentSection
                 title={i18n.t('home.nearMe')}
@@ -308,41 +331,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
               />
             )}
 
-            <EstablishmentSection
-              title={i18n.t('home.recommended')}
-              establishments={recommendedEstablishments}
-              onEstablishmentPress={handleEstablishmentPress}
-            />
+            {/* 2. Sección "Featured" - Establecimientos destacados */}
+            {featuredEstablishments.length > 0 && (
+              <EstablishmentSection
+                title={i18n.t('home.premiumSelection')}
+                establishments={featuredEstablishments}
+                onEstablishmentPress={handleEstablishmentPress}
+              />
+            )}
 
-            <EstablishmentSection
-              title={i18n.t('home.mostPopular')}
-              establishments={popularEstablishments}
-              onEstablishmentPress={handleEstablishmentPress}
-            />
+            {/* 3. Sección "Trending" - Establecimientos en tendencia */}
+            {trendingEstablishments.length > 0 && (
+              <EstablishmentSection
+                title={i18n.t('home.trendingNow')}
+                establishments={trendingEstablishments}
+                onEstablishmentPress={handleEstablishmentPress}
+              />
+            )}
 
-            <EstablishmentSection
-              title={i18n.t('home.topRated')}
-              establishments={topRatedEstablishments}
-              onEstablishmentPress={handleEstablishmentPress}
-            />
-
-            <EstablishmentSection
-              title={i18n.t('home.trendingNow')}
-              establishments={trendingEstablishments}
-              onEstablishmentPress={handleEstablishmentPress}
-            />
-
-            <EstablishmentSection
-              title={i18n.t('home.premiumSelection')}
-              establishments={featuredEstablishments}
-              onEstablishmentPress={handleEstablishmentPress}
-            />
-
-            <EstablishmentSection
-              title={i18n.t('home.discover')}
-              establishments={newEstablishments}
-              onEstablishmentPress={handleEstablishmentPress}
-            />
+            {/* =========================================== */}
 
             <View style={{ height: 100 }} />
           </View>

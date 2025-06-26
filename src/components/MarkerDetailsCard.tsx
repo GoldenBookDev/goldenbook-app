@@ -35,9 +35,16 @@ const iconMapping: { [key: string]: React.FC<any> } = {
     'activities': PeopleIcon,
 };
 
+interface CategoryWithTranslation {
+    id: string;
+    title: string;
+    icon: React.FC<any>;
+    translatedTitle?: string; // ← AÑADIR TRADUCCIÓN
+}
+
 interface MarkerDetailsCardProps {
     establishment: Establishment | null;
-    categories: Array<{ id: string; title: string; icon: React.FC<any> }>;
+    categories: CategoryWithTranslation[]; // ← ACTUALIZAR TIPO
     onClose: () => void;
     onPress: () => void;
 }
@@ -60,9 +67,16 @@ const MarkerDetailsCard: React.FC<MarkerDetailsCardProps> = ({
         return url || '';
     };
 
-    const getCategoryTitle = (categoryId: string) => {
+    // ========== FUNCIÓN ACTUALIZADA PARA OBTENER TÍTULO TRADUCIDO ==========
+    const getCategoryTitle = (categoryId: string): string => {
         const category = categories.find(cat => cat.id === categoryId);
-        return category ? category.title : categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
+        if (category) {
+            // Usar translatedTitle si existe, sino usar title original
+            const title = category.translatedTitle || category.title;
+            return String(title || categoryId);
+        }
+        // Fallback: capitalizar el ID si no se encuentra la categoría
+        return String(categoryId || '').charAt(0).toUpperCase() + String(categoryId || '').slice(1);
     };
 
     const imageUrl = establishment.mainImage ? getImageUrl(establishment.mainImage) : '';
@@ -70,7 +84,7 @@ const MarkerDetailsCard: React.FC<MarkerDetailsCardProps> = ({
         ? establishment.categories[0]
         : 'gastronomy';
     const CategoryIcon = iconMapping[primaryCategory] || PlateIcon;
-    const categoryTitle = getCategoryTitle(primaryCategory);
+    const categoryTitle = getCategoryTitle(primaryCategory); // ← AHORA USA TRADUCCIÓN
 
     return (
         <View style={cardStyles.markerCardContainer}>
@@ -88,7 +102,7 @@ const MarkerDetailsCard: React.FC<MarkerDetailsCardProps> = ({
                     <Text style={cardStyles.markerCardTitle}>{establishment.name}</Text>
                     <Text style={cardStyles.markerCardDescription}
                         numberOfLines={2}>
-                        {establishment.shortDescription || 'Establecimiento'} • {establishment.address ? `${establishment.address.substring(0, 30)}...` : 'Dirección no disponible'}
+                        {(establishment.shortDescription || 'Estabelecimento')} • {establishment.address ? `${establishment.address.substring(0, 30)}...` : 'Morada não disponível'}
                     </Text>
                     <View style={cardStyles.thumbContainer}>
                         <ThumbIcon width={width * 0.04} height={width * 0.04} style={{ marginRight: width * 0.01 }} />
@@ -103,7 +117,9 @@ const MarkerDetailsCard: React.FC<MarkerDetailsCardProps> = ({
                             height: width * 0.04,
                             fill: "#FFFFFF"
                         })}
-                        <Text style={cardStyles.categoryTagText}>{categoryTitle}</Text>
+                        <Text style={cardStyles.categoryTagText}>
+                            {String(categoryTitle || 'Categoria')}
+                        </Text>
                     </View>
                 </View>
             </TouchableOpacity>

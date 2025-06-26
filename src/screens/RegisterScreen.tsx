@@ -11,10 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import i18n from '../i18n';
 import { RootStackParamList } from '../navigation/navigationTypes';
 import { registerUser } from '../services/authService';
+import { saveUserPreferences } from '../services/userService';
 import { isValidEmail, isValidPassword } from '../utils/validation';
-import i18n from '../i18n'; // Importar i18n
 
 type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
@@ -25,7 +26,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [passwordError, setPasswordError] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
-  const [isMarketingChecked, setIsMarketingChecked] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(true); // Pre-checked
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
@@ -52,13 +54,35 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   }, [email, password, confirmPassword]);
 
   const handleRegister = async () => {
-    if (emailError || passwordError || confirmPasswordError) {
+    if (emailError || passwordError || confirmPasswordError || !acceptTerms) {
       Alert.alert('Error', 'Please fix the errors before continuing');
       return;
     }
 
     try {
       const user = await registerUser(email, password);
+
+      if (user) {
+        // Crear el perfil completo del usuario
+        const userProfile = {
+          displayName: user.displayName || '',
+          firstName: '',
+          lastName: '',
+          email: user.email || email,
+          photoURL: user.photoURL || ''
+        };
+
+        const preferences = {
+          marketingConsent: acceptMarketing,
+          termsAcceptedAt: new Date(),
+          privacyPolicyAcceptedAt: new Date(),
+          language: 'en' // o detectar idioma: i18n.locale
+        };
+
+        // Guardar tanto las preferencias como el perfil
+        await saveUserPreferences(user.uid, preferences, userProfile);
+      }
+
       Alert.alert(
         'Success',
         `Account created successfully! A verification email has been sent to ${user?.email}.`
@@ -69,9 +93,13 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }
   };
 
+  const isFormValid = !emailError && !passwordError && !confirmPasswordError &&
+    email && password && confirmPassword && acceptTerms;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{i18n.t('auth.completeRegistration')}</Text>
+
       <TextInput
         style={[
           styles.input,
@@ -85,6 +113,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         onChangeText={setEmail}
       />
       {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+
       <Text style={styles.subText}>
         {i18n.t('auth.emailConfirmation')}
       </Text>
@@ -143,37 +172,44 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         <Text style={styles.errorText}>{confirmPasswordError}</Text>
       ) : null}
 
-      <Text style={styles.termsText}>
-        {i18n.t('auth.termsAndConditions')}
-      </Text>
+      {/* Checkbox obligatorio para términos */}
+      <View style={styles.checkboxContainer}>
+        <CheckBox
+          value={acceptTerms}
+          onValueChange={setAcceptTerms}
+          color={acceptTerms ? '#00B383' : undefined}
+          style={styles.checkbox}
+        />
+        <Text style={styles.checkboxLabel}>
+          {i18n.t('auth.acceptTermsRequired')}
+        </Text>
+      </View>
 
       <TouchableOpacity
         style={[
           styles.button,
-          (emailError || passwordError || confirmPasswordError || !email || !password || !confirmPassword) &&
-            styles.disabledButton,
+          !isFormValid && styles.disabledButton,
         ]}
         onPress={handleRegister}
-        disabled={
-          !!(emailError || passwordError || confirmPasswordError || !email || !password || !confirmPassword)
-        }
+        disabled={!isFormValid}
       >
-        <Text style={styles.buttonText}>{i18n.t('auth.acceptAndContinue')}</Text>
+        <Text style={styles.buttonText}>{i18n.t('auth.continue')}</Text>
       </TouchableOpacity>
 
       <Text style={styles.promotionText}>
         {i18n.t('auth.promotionalEmails')}
       </Text>
 
+      {/* Checkbox de marketing (pre-seleccionado) */}
       <View style={styles.checkboxContainer}>
         <CheckBox
-          value={isMarketingChecked}
-          onValueChange={setIsMarketingChecked}
-          color={isMarketingChecked ? '#00B383' : undefined}
+          value={acceptMarketing}
+          onValueChange={setAcceptMarketing}
+          color={acceptMarketing ? '#00B383' : undefined}
           style={styles.checkbox}
         />
         <Text style={styles.checkboxLabel}>
-          {i18n.t('auth.noCommercialMessages')}
+          {i18n.t('auth.receivePromotionalEmails')}
         </Text>
       </View>
 
@@ -230,18 +266,6 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-Regular',
     color: '#6C757D',
     marginBottom: '5%',
-  },
-  termsText: {
-    fontSize: Dimensions.get('window').width * 0.035,
-    fontFamily: 'EuclidSquare-Medium',
-    color: '#6C757D',
-    marginTop: '3%',
-    marginBottom: '5%',
-    textAlign: 'left',
-  },
-  linkText: {
-    color: '#1977F2',
-    textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: '#00B383',

@@ -10,13 +10,15 @@ const { width } = Dimensions.get('window');
 interface MapControlsProps {
     onZoomIn: () => void;
     onZoomOut: () => void;
-    onCenterLocation: () => void;
+    onCenterLocation?: () => void;
+    showLocationButton: boolean;
 }
 
 const MapControls: React.FC<MapControlsProps> = ({
     onZoomIn,
     onZoomOut,
-    onCenterLocation
+    onCenterLocation,
+    showLocationButton
 }) => {
     return (
         <View style={controlsStyles.zoomControlsContainer}>
@@ -26,9 +28,11 @@ const MapControls: React.FC<MapControlsProps> = ({
             <TouchableOpacity style={controlsStyles.zoomButton} onPress={onZoomOut}>
                 <MinusIcon width={width * 0.05} height={width * 0.05} />
             </TouchableOpacity>
-            <TouchableOpacity style={controlsStyles.locationButton} onPress={onCenterLocation}>
-                <LocationIcon width={width * 0.05} height={width * 0.05} fill="#FFFFFF" />
-            </TouchableOpacity>
+            {showLocationButton && onCenterLocation && (
+                <TouchableOpacity style={controlsStyles.locationButton} onPress={onCenterLocation}>
+                    <LocationIcon width={width * 0.05} height={width * 0.05} fill="#FFFFFF" />
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
