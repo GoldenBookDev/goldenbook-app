@@ -1,4 +1,3 @@
-import * as Analytics from 'expo-firebase-analytics';
 import * as Notifications from 'expo-notifications';
 import * as TrackingTransparency from 'expo-tracking-transparency';
 import { useEffect, useState } from 'react';
@@ -101,13 +100,7 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
       });
 
       const granted = status === 'granted';
-      
-      // Log analytics
-      Analytics.logEvent('permission_requested', {
-        permission_type: 'notifications',
-        granted: granted,
-        platform: Platform.OS
-      });
+       
 
       if (!granted && showAlertOnDenied) {
         Alert.alert(
@@ -120,10 +113,6 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
       return granted;
     } catch (error) {
       console.error('Error requesting notification permission:', error);
-      Analytics.logEvent('permission_error', {
-        permission_type: 'notifications',
-        error: error?.toString() || 'unknown'
-      });
       return false;
     }
   };
@@ -157,21 +146,10 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
       
       const granted = status === 'granted';
       
-      // Log analytics
-      Analytics.logEvent('permission_requested', {
-        permission_type: 'tracking',
-        granted: granted,
-        platform: Platform.OS,
-        ios_version: systemVersion
-      });
 
       return granted;
     } catch (error) {
       console.error('Error requesting tracking permission:', error);
-      Analytics.logEvent('permission_error', {
-        permission_type: 'tracking',
-        error: error?.toString() || 'unknown'
-      });
       return false;
     }
   };
