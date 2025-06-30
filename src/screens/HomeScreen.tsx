@@ -16,10 +16,8 @@ import { useLocation } from '../hooks/useLocation';
 import i18n from '../i18n';
 import { RootStackParamList } from '../navigation/navigationTypes';
 
-// Import SVG components
-import ArrowLeftIcon from '../assets/images/icons/arrow-left-bg.svg';
-import LandLayerLocationIcon from '../assets/images/icons/land-layer-location.svg';
-import MenuIcon from '../assets/images/icons/menu-bg.svg';
+// ✅ NUEVO: Import del sistema de iconos
+import { UIIcon } from '../components/icons/IconSystem';
 
 // Import components
 import CategoriesGrid from '../components/CategoriesGrid';
@@ -145,7 +143,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   }, [hasPermission, location, allEstablishments]);
 
   const toggleMenu = () => {
-
     setMenuVisible(!menuVisible);
   };
 
@@ -158,7 +155,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   };
 
   const handleCategoryPress = (categoryId: string, categoryTitle: string) => {
-
     if (selectedLocation) {
       navigation.navigate('CategoryScreen', {
         categoryId,
@@ -169,19 +165,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   };
 
   const handleEstablishmentPress = (establishmentId: string) => {
-
-
     navigation.navigate('EstablishmentScreen', { establishmentId });
   };
 
   const handleLocationButtonPress = () => {
-
     navigation.navigate('LocationSelection');
   };
 
   const handleMapButtonPress = () => {
-
-
     navigation.navigate('MapScreen', {
       selectedLocation: selectedLocation || undefined
     });
@@ -189,19 +180,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
 
   const handleSearchSubmit = (query: string) => {
     if (query.trim()) {
-
     }
   };
 
   const handleEstablishmentFromSearch = (establishmentId: string) => {
-
-
     handleSelectEstablishment(establishmentId);
   };
 
   const handleShowAllSearchResults = () => {
-
-
     handleShowAllResults();
   };
 
@@ -232,10 +218,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
             style={styles.backButton}
             onPress={handleLocationButtonPress}
           >
-            <ArrowLeftIcon width={width * 0.1} height={width * 0.1} />
+            {/* ✅ REEMPLAZADO: ArrowLeftIcon por UIIcon */}
+            <UIIcon
+              name="arrow-left-bg"
+              size={width * 0.06}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuButton} onPress={toggleMenu}>
-            <MenuIcon width={width * 0.1} height={width * 0.1} />
+            {/* ✅ REEMPLAZADO: MenuIcon por UIIcon */}
+            <UIIcon
+              name="menu-bg"
+              size={width * 0.06}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -323,10 +319,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
           style={styles.floatingMapButton}
           onPress={handleMapButtonPress}
         >
-          <LandLayerLocationIcon
-            width={width * 0.045}
-            height={width * 0.045}
-            fill="#FFFFFF"
+          {/* ✅ REEMPLAZADO: LandLayerLocationIcon por UIIcon */}
+          <UIIcon
+            name="land-layer-location"
+            size={width * 0.045}
+            color="#FFFFFF"
             style={{ marginRight: width * 0.02 }}
           />
           <Text style={styles.floatingMapButtonText}>{i18n.t('home.seeMap')}</Text>
