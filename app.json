@@ -54,8 +54,10 @@
       "expo-localization"
     ],
     "ios": {
+      "icon": "./assets/icon.png",
       "bundleIdentifier": "com.bwebstudio.goldenbook",
       "supportsTablet": true,
+      "buildNumber": "3",
       "config": {
         "googleMapsApiKey": "AIzaSyDVJnSG4u2xmUCSK421laj3tLx3ZH7NDdM"
       },
