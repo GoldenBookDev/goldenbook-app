@@ -4,11 +4,7 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import i18n from '../i18n';
 
 // Icons
-import ClockIcon from '../assets/images/icons/clockIcon.svg';
-import EmailIcon from '../assets/images/icons/emailIcon.svg';
-import GoArrowIcon from '../assets/images/icons/go_arrow.svg';
-import LocationIcon from '../assets/images/icons/location_icon.svg';
-import PhoneIcon from '../assets/images/icons/phone.svg';
+import { UIIcon } from './icons/IconSystem'; // ✅ Solo UIIcon necesario
 
 const { width } = Dimensions.get('window');
 
@@ -44,7 +40,8 @@ const EstablishmentContacts: React.FC<EstablishmentContactsProps> = ({
         <View style={contactsStyles.contactsContainer}>
             <View style={contactsStyles.contactRow}>
                 <View style={contactsStyles.iconCircle}>
-                    <LocationIcon width={20} height={20} fill="#DAA520" />
+                    {/* ✅ REEMPLAZAR LocationIcon por UIIcon */}
+                    <UIIcon name="location" size={20} color="#915A17" />
                 </View>
                 <View style={contactsStyles.contactContent}>
                     <Text style={[contactsStyles.contactText, contactsStyles.addressText]}>
@@ -52,13 +49,15 @@ const EstablishmentContacts: React.FC<EstablishmentContactsProps> = ({
                     </Text>
                 </View>
                 <TouchableOpacity style={contactsStyles.goButton} onPress={handleGoToMap}>
-                    <GoArrowIcon width={18} height={18} fill="#FFFFFF" />
+                    {/* ✅ REEMPLAZAR GoArrowIcon por UIIcon send */}
+                    <UIIcon name="send" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
             </View>
 
             <View style={contactsStyles.contactRow}>
                 <View style={contactsStyles.iconCircle}>
-                    <PhoneIcon width={20} height={20} fill="#DAA520" />
+                    {/* ✅ REEMPLAZAR PhoneIcon por UIIcon */}
+                    <UIIcon name="phone" size={20} color="#915A17" />
                 </View>
                 <Text style={contactsStyles.contactText}>
                     {establishment.phone || i18n.t('establishment.noPhoneAvailable')}
@@ -67,7 +66,8 @@ const EstablishmentContacts: React.FC<EstablishmentContactsProps> = ({
 
             <View style={contactsStyles.contactRow}>
                 <View style={contactsStyles.iconCircle}>
-                    <EmailIcon width={20} height={20} fill="#DAA520" />
+                    {/* ✅ REEMPLAZAR EmailIcon por UIIcon */}
+                    <UIIcon name="mail" size={20} color="#915A17" />
                 </View>
                 <Text style={contactsStyles.contactText}>
                     {establishment.email || i18n.t('establishment.noEmailAvailable')}
@@ -76,7 +76,8 @@ const EstablishmentContacts: React.FC<EstablishmentContactsProps> = ({
 
             <View style={contactsStyles.contactRow}>
                 <View style={contactsStyles.iconCircle}>
-                    <ClockIcon width={20} height={20} fill="#DAA520" />
+                    {/* ✅ REEMPLAZAR ClockIcon por UIIcon */}
+                    <UIIcon name="time" size={20} color="#915A17" />
                 </View>
                 <View style={contactsStyles.scheduleContainer}>
                     <Text style={[contactsStyles.contactText, contactsStyles.openNowText]}>
@@ -129,7 +130,7 @@ const contactsStyles = StyleSheet.create({
         color: 'black',
     },
     goButton: {
-        backgroundColor: '#DAA520',
+        backgroundColor: '#DAA520', // ✅ CAMBIAR color para consistencia
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
@@ -142,7 +143,7 @@ const contactsStyles = StyleSheet.create({
         alignItems: 'center',
     },
     openNowText: {
-        color: '#00B383',
+        color: '#008000',
         marginRight: 4,
     },
     closeTimeText: {
@@ -165,4 +166,5 @@ const contactsStyles = StyleSheet.create({
         textAlign: 'left',
     },
 });
-export default EstablishmentContacts
+
+export default EstablishmentContacts;

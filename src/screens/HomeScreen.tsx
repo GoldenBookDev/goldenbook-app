@@ -1,3 +1,4 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -11,6 +12,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// ✅ AGREGAR: Import del contexto de autenticación
+import { useAuth } from '../context/AuthContext';
+
 import LocationPermissionModal from '../components/LocationPermissionModal';
 import { useLocation } from '../hooks/useLocation';
 import i18n from '../i18n';
@@ -30,6 +35,8 @@ import SearchDropdown from '../components/SearchDropdown';
 // Import hooks
 import { useHomeData } from '../hooks/useHomeData';
 import { useSearch } from '../hooks/useSearch';
+// ✅ AGREGAR: Import del hook de acciones de usuario
+import { useUserActions } from '../hooks/useUserActions';
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'HomeScreen'>;
 
@@ -40,6 +47,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const [scrollY, setScrollY] = useState(0);
 
+  // ✅ AGREGAR: Hook de autenticación
+  const { user, isGuest } = useAuth();
+
   // Custom hooks para manejar datos y búsqueda
   const {
     selectedLocation,
@@ -49,7 +59,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     loading,
     allEstablishments,
     featuredEstablishments,
-    trendingEstablishments
+    trendingEstablishments,
+    refreshEstablishments // ✅ AGREGAR: Función de refresh
   } = useHomeData(route, navigation);
 
   const {
@@ -63,6 +74,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     handleShowAllResults
   } = useSearch(allEstablishments, navigation, selectedLocation);
 
+  // ✅ AGREGAR: Hook de acciones de usuario
+  const {
+    userFavorites,
+    updatingFavorites,
+    userLikes,
+    updatingLikes,
+    handleFavoriteToggle,
+    handleLikeToggle: originalHandleLikeToggle
+  } = useUserActions(navigation);
+
   const {
     shouldShowModal,
     requestPermission,
@@ -71,8 +92,89 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     location
   } = useLocation();
 
-  // Estado para establecimientos cercanos
+  // Estado para establecimientos cercanos con reviewCount actualizable
   const [nearbyEstablishments, setNearbyEstablishments] = useState<any[]>([]);
+  // ✅ AGREGAR: Estados locales para establishments con reviewCount actualizable
+  const [localFeaturedEstablishments, setLocalFeaturedEstablishments] = useState<any[]>([]);
+  const [localTrendingEstablishments, setLocalTrendingEstablishments] = useState<any[]>([]);
+
+  // ✅ AGREGAR: Refrescar datos cuando vuelves a la pantalla
+  useFocusEffect(
+    React.useCallback(() => {
+      // Agregar un pequeño delay para dar tiempo a que el backend se actualice
+      const timer = setTimeout(async () => {
+
+        // ✅ USAR: Función de refresh del hook
+        await refreshEstablishments();
+
+        // Re-calcular nearbyEstablishments después del refresh
+        if (hasPermission && location && allEstablishments.length > 0) {
+          loadNearbyEstablishments();
+        }
+      }, 500); // ✅ Delay de 500ms para dar tiempo al backend
+
+      return () => clearTimeout(timer);
+    }, [refreshEstablishments, hasPermission, location])
+  );
+  useEffect(() => {
+    if (featuredEstablishments && featuredEstablishments.length > 0) {
+      setLocalFeaturedEstablishments(featuredEstablishments);
+    }
+  }, [featuredEstablishments]);
+
+  useEffect(() => {
+    if (trendingEstablishments && trendingEstablishments.length > 0) {
+      setLocalTrendingEstablishments(trendingEstablishments);
+    }
+  }, [trendingEstablishments]);
+
+  // ✅ AGREGAR: Función personalizada para manejar likes con actualización optimista
+  const handleLikeToggleWithOptimism = async (establishmentId: string) => {
+    // Verificar autenticación antes de hacer cambios optimistas
+    if (!user || isGuest) {
+      // Si no está logueado, solo mostrar el modal
+      await originalHandleLikeToggle(establishmentId);
+      return;
+    }
+
+    try {
+      const isCurrentlyLiked = userLikes.includes(establishmentId);
+
+      // ✅ CORREGIR: Función helper para actualizar reviewCount en un array
+      const updateEstablishmentInArray = (establishments: any[]) =>
+        establishments.map(establishment => {
+          if (establishment.id === establishmentId) {
+            const newReviewCount = isCurrentlyLiked
+              ? Math.max(0, (establishment.reviewCount || 0) - 1)
+              : (establishment.reviewCount || 0) + 1;
+
+            return {
+              ...establishment,
+              reviewCount: newReviewCount
+            };
+          }
+          return establishment;
+        });
+
+      // Actualizar optimisticamente en todos los arrays locales
+      setNearbyEstablishments(prev => updateEstablishmentInArray(prev));
+      setLocalFeaturedEstablishments(prev => updateEstablishmentInArray(prev));
+      setLocalTrendingEstablishments(prev => updateEstablishmentInArray(prev));
+
+      // Ejecutar la función original de like
+      await originalHandleLikeToggle(establishmentId);
+
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      // En caso de error, revertir usando los datos originales del backend
+      setLocalFeaturedEstablishments(featuredEstablishments);
+      setLocalTrendingEstablishments(trendingEstablishments);
+      // Recalcular nearbyEstablishments
+      if (hasPermission && location && allEstablishments.length > 0) {
+        loadNearbyEstablishments();
+      }
+    }
+  };
 
   useEffect(() => {
     const params = route.params as any;
@@ -103,42 +205,44 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
+  // ✅ MOVER loadNearbyEstablishments fuera del useEffect para poder reutilizarla
+  const loadNearbyEstablishments = () => {
+    if (hasPermission && location && allEstablishments.length > 0) {
+      try {
+        const nearby = allEstablishments
+          .map(establishment => {
+            // Verificar que el establecimiento tenga coordenadas
+            if (!establishment.coordinates?.latitude || !establishment.coordinates?.longitude) {
+              return null;
+            }
+
+            const distance = calculateDistance(
+              location.latitude,
+              location.longitude,
+              establishment.coordinates.latitude,
+              establishment.coordinates.longitude
+            );
+
+            return { ...establishment, distance };
+          })
+          .filter((establishment): establishment is typeof establishment & { distance: number } =>
+            establishment !== null && establishment.distance <= 30
+          )
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, 6);
+
+        setNearbyEstablishments(nearby);
+      } catch (error) {
+        console.error('Error loading nearby establishments:', error);
+      }
+    } else {
+      // Si no hay permisos o ubicación, limpiar la lista
+      setNearbyEstablishments([]);
+    }
+  };
+
   // Efecto para cargar establecimientos cercanos cuando se otorgan permisos
   useEffect(() => {
-    const loadNearbyEstablishments = async () => {
-      if (hasPermission && location && allEstablishments.length > 0) {
-        try {
-          const nearby = allEstablishments
-            .map(establishment => {
-              // Verificar que el establecimiento tenga coordenadas
-              if (!establishment.coordinates?.latitude || !establishment.coordinates?.longitude) {
-                return null;
-              }
-
-              const distance = calculateDistance(
-                location.latitude,
-                location.longitude,
-                establishment.coordinates.latitude,
-                establishment.coordinates.longitude
-              );
-
-              return { ...establishment, distance };
-            })
-            .filter((establishment): establishment is typeof establishment & { distance: number } =>
-              establishment !== null && establishment.distance <= 30
-            )
-            .sort((a, b) => a.distance - b.distance)
-            .slice(0, 6);
-
-          setNearbyEstablishments(nearby);
-        } catch (error) {
-        }
-      } else {
-        // Si no hay permisos o ubicación, limpiar la lista
-        setNearbyEstablishments([]);
-      }
-    };
-
     loadNearbyEstablishments();
   }, [hasPermission, location, allEstablishments]);
 
@@ -280,7 +384,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
               onCategoryPress={handleCategoryPress}
             />
 
-            {/* ============ SOLO 3 SECCIONES ============ */}
+            {/* ============ SECCIONES CON PROPS DE USUARIO ============ */}
 
             {/* 1. Sección "Near me" - Solo se muestra si hay permisos de ubicación */}
             {hasPermission && nearbyEstablishments.length > 0 && (
@@ -288,24 +392,45 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ route, navigation }) => {
                 title={i18n.t('home.nearMe')}
                 establishments={nearbyEstablishments}
                 onEstablishmentPress={handleEstablishmentPress}
+                // ✅ AGREGAR: Props de usuario
+                userFavorites={userFavorites}
+                updatingFavorites={updatingFavorites}
+                userLikes={userLikes}
+                updatingLikes={updatingLikes}
+                onFavoriteToggle={handleFavoriteToggle}
+                onLikeToggle={handleLikeToggleWithOptimism}
               />
             )}
 
             {/* 2. Sección "Featured" - Establecimientos destacados */}
-            {featuredEstablishments.length > 0 && (
+            {localFeaturedEstablishments.length > 0 && (
               <EstablishmentSection
                 title={i18n.t('home.premiumSelection')}
-                establishments={featuredEstablishments}
+                establishments={localFeaturedEstablishments} // ✅ Usar estado local
                 onEstablishmentPress={handleEstablishmentPress}
+                // ✅ AGREGAR: Props de usuario
+                userFavorites={userFavorites}
+                updatingFavorites={updatingFavorites}
+                userLikes={userLikes}
+                updatingLikes={updatingLikes}
+                onFavoriteToggle={handleFavoriteToggle}
+                onLikeToggle={handleLikeToggleWithOptimism}
               />
             )}
 
             {/* 3. Sección "Trending" - Establecimientos en tendencia */}
-            {trendingEstablishments.length > 0 && (
+            {localTrendingEstablishments.length > 0 && (
               <EstablishmentSection
                 title={i18n.t('home.trendingNow')}
-                establishments={trendingEstablishments}
+                establishments={localTrendingEstablishments} // ✅ Usar estado local
                 onEstablishmentPress={handleEstablishmentPress}
+                // ✅ AGREGAR: Props de usuario
+                userFavorites={userFavorites}
+                updatingFavorites={updatingFavorites}
+                userLikes={userLikes}
+                updatingLikes={updatingLikes}
+                onFavoriteToggle={handleFavoriteToggle}
+                onLikeToggle={handleLikeToggleWithOptimism}
               />
             )}
 

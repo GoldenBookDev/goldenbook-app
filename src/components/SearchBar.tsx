@@ -7,7 +7,7 @@ import {
   View
 } from 'react-native';
 
-import SearchIcon from '../assets/images/icons/search.svg';
+import { UIIcon } from './icons/IconSystem'; // ✅ Importar UIIcon
 
 const { width } = Dimensions.get('window');
 
@@ -34,11 +34,16 @@ const SearchBar = forwardRef<TextInput, SearchBarProps>(({
 }, ref) => {
   return (
     <View style={[styles.searchBar, style]}>
-      <SearchIcon width={width * 0.05} height={width * 0.05} fill="#999" />
+      {/* ✅ ICONO CON COLOR CORRECTO */}
+      <UIIcon
+        name="search"
+        size={width * 0.045} // Un poco más pequeño
+        color="#495057" // ✅ Color correcto según maqueta
+      />
       <TextInput
         style={styles.searchInput}
         placeholder={placeholder}
-        placeholderTextColor="#999"
+        placeholderTextColor="#6C757D" // ✅ Color del placeholder correcto
         value={value}
         onChangeText={onChangeText}
         onSubmitEditing={onSubmitEditing}
@@ -57,14 +62,16 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F8F9FA', // ✅ Fondo correcto según maqueta
     borderRadius: 25,
     paddingHorizontal: width * 0.04,
     height: width * 0.11,
+    borderWidth: 1, // ✅ Border interno fino
+    borderColor: '#E9ECEF', // ✅ Color del border según maqueta
   },
   searchInput: {
     flex: 1,
-    fontSize: width * 0.04,
+    fontSize: width * 0.035, // ✅ Texto más pequeño según maqueta
     fontFamily: 'EuclidSquare-Regular',
     color: '#333',
     marginLeft: width * 0.02,

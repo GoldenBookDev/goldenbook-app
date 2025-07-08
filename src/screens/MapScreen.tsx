@@ -11,12 +11,15 @@ import {
 } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import i18n from '../i18n'; // ← IMPORTAR i18n
+import i18n from '../i18n';
 import { RootStackParamList } from '../navigation/navigationTypes';
 
-// Import SVG components
-import ArrowLeftIcon from '../assets/images/icons/arrow-left-bg.svg';
-import FilterIcon from '../assets/images/icons/filter.svg';
+// ✅ NUEVO: Import del sistema de iconos
+import { UIIcon } from '../components/icons/IconSystem';
+
+// ❌ REMOVIDO: Import SVG components
+// import ArrowLeftIcon from '../assets/images/icons/arrow-left-bg.svg';
+// import FilterIcon from '../assets/images/icons/filter.svg';
 
 // Imports de componentes y hooks refactorizados
 import CategoryFilters from '../components/CategoryFilters';
@@ -311,11 +314,13 @@ const MapScreen: React.FC<MapScreenProps> = ({ route, navigation }) => {
       <SafeAreaView style={styles.safeArea} edges={['right', 'left']}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <ArrowLeftIcon width={width * 0.1} height={width * 0.1} />
+            {/* ✅ REEMPLAZADO: ArrowLeftIcon por UIIcon */}
+            <UIIcon name="arrow-left-bg" size={width * 0.06} color="#1A1A2E" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{locationName}</Text>
           <TouchableOpacity style={styles.filterButton}>
-            <FilterIcon width={width * 0.06} height={width * 0.06} />
+            {/* ✅ REEMPLAZADO: FilterIcon por UIIcon */}
+            <UIIcon name="search" size={width * 0.06} color="#1A1A2E" />
           </TouchableOpacity>
         </View>
 

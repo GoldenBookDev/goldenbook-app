@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import i18n from '../i18n';
 
-// Icons
-import ClockIcon from '../assets/images/icons/clockIcon.svg';
+// ✅ CAMBIO: Reemplazar SVG por UIIcon
+import { UIIcon } from './icons/IconSystem';
 
 const { width } = Dimensions.get('window');
 
@@ -60,7 +60,8 @@ const EstablishmentOverview: React.FC<EstablishmentOverviewProps> = ({
                 <View style={overviewStyles.infoSection}>
                     <Text style={overviewStyles.sectionTitle}>{i18n.t('establishment.openingHours')}</Text>
                     <View style={overviewStyles.infoRow}>
-                        <ClockIcon width={24} height={24} fill="#DAA520" />
+                        {/* ✅ REEMPLAZADO: ClockIcon por UIIcon time */}
+                        <UIIcon name="time" size={24} color="#915A17" />
                         <Text style={overviewStyles.infoText}>{establishment.openingHours}</Text>
                     </View>
                 </View>
@@ -138,4 +139,5 @@ const overviewStyles = StyleSheet.create({
         color: '#1A1A2E',
     },
 });
-export default EstablishmentOverview
+
+export default EstablishmentOverview;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Establishment, searchEstablishments } from '../services/firestoreService';
 
 interface SearchResult extends Establishment {
@@ -15,10 +15,29 @@ export const useCategorySearch = (
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // ✅ AGREGAR: Ref para el timeout de debouncing
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearchChange = async (query: string) => {
-    setSearchQuery(query);
+  // ✅ MEMOIZAR: Función de búsqueda local
+  const localSearch = useCallback((establishments: Establishment[], query: string): SearchResult[] => {
+    if (!query.trim()) return [];
+
+    const searchTerm = query.toLowerCase();
     
+    return establishments.filter(establishment => {
+      return (
+        establishment.name.toLowerCase().includes(searchTerm) ||
+        establishment.shortDescription?.toLowerCase().includes(searchTerm) ||
+        establishment.address?.toLowerCase().includes(searchTerm) ||
+        establishment.categories?.some(cat => cat.toLowerCase().includes(searchTerm)) ||
+        establishment.subcategories?.some(sub => sub.toLowerCase().includes(searchTerm))
+      );
+    }).map(est => ({ ...est, searchScore: 1 }));
+  }, []);
+
+  // ✅ MEMOIZAR: Función de búsqueda remota
+  const performSearch = useCallback(async (query: string) => {
     if (query.trim() === '') {
       setSearchResults([]);
       return;
@@ -60,7 +79,6 @@ export const useCategorySearch = (
       const sortedResults = scoredResults.sort((a, b) => (b.searchScore || 0) - (a.searchScore || 0));
       
       setSearchResults(sortedResults);
-      console.log(`🔍 Search "${query}" found ${sortedResults.length} results`);
     } catch (error) {
       console.error('❌ Error searching:', error);
       
@@ -70,37 +88,48 @@ export const useCategorySearch = (
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [selectedLocation, categoryId, establishments, localSearch]);
 
-  // Local search fallback
-  const localSearch = (establishments: Establishment[], query: string): SearchResult[] => {
-    if (!query.trim()) return [];
-
-    const searchTerm = query.toLowerCase();
+  // ✅ CORREGIR: Función de cambio de búsqueda con debouncing
+  const handleSearchChange = useCallback((query: string) => {
+    // ✅ Actualizar inmediatamente el query (para UI responsiva)
+    setSearchQuery(query);
     
-    return establishments.filter(establishment => {
-      return (
-        establishment.name.toLowerCase().includes(searchTerm) ||
-        establishment.shortDescription?.toLowerCase().includes(searchTerm) ||
-        establishment.address?.toLowerCase().includes(searchTerm) ||
-        establishment.categories?.some(cat => cat.toLowerCase().includes(searchTerm)) ||
-        establishment.subcategories?.some(sub => sub.toLowerCase().includes(searchTerm))
-      );
-    }).map(est => ({ ...est, searchScore: 1 }));
-  };
+    // ✅ Limpiar timeout anterior
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-  const handleSearchFocus = () => {
+    // ✅ Si el query está vacío, limpiar resultados inmediatamente
+    if (query.trim() === '') {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    // ✅ Primero, búsqueda local instantánea para feedback inmediato
+    const localResults = localSearch(establishments, query);
+    setSearchResults(localResults);
+
+    // ✅ Luego, búsqueda remota con debouncing
+    searchTimeoutRef.current = setTimeout(() => {
+      performSearch(query);
+    }, 300); // ✅ 300ms de delay para evitar llamadas excesivas
+  }, [establishments, localSearch, performSearch]);
+
+  // ✅ MEMOIZAR: Funciones de foco
+  const handleSearchFocus = useCallback(() => {
     setIsSearchFocused(true);
-  };
+  }, []);
 
-  const handleSearchBlur = () => {
+  const handleSearchBlur = useCallback(() => {
     // Delay to allow tap on results
     setTimeout(() => {
       setIsSearchFocused(false);
     }, 150);
-  };
+  }, []);
 
-  const handleSelectEstablishment = (establishment: Establishment) => {
+  const handleSelectEstablishment = useCallback((establishment: Establishment) => {
     navigation.navigate('EstablishmentScreen', {
       establishmentId: establishment.id
     });
@@ -109,18 +138,32 @@ export const useCategorySearch = (
     setSearchQuery('');
     setSearchResults([]);
     setIsSearchFocused(false);
-  };
+  }, [navigation]);
 
-  const handleShowAllResults = () => {
+  const handleShowAllResults = useCallback(() => {
     // You can implement a dedicated search results screen here
     console.log('Show all search results');
-  };
+  }, []);
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchQuery('');
     setSearchResults([]);
     setIsSearchFocused(false);
-  };
+    
+    // ✅ Limpiar timeout si existe
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+  }, []);
+
+  // ✅ CLEANUP: Limpiar timeout al desmontar
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     searchQuery,

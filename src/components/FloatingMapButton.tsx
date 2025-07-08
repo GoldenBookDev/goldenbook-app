@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import LandLayerLocationIcon from '../assets/images/icons/land-layer-location.svg';
 import i18n from '../i18n';
+import { UIIcon } from './icons/IconSystem';
 
 const { width } = Dimensions.get('window');
 
@@ -12,10 +12,11 @@ interface FloatingMapButtonProps {
 const FloatingMapButton: React.FC<FloatingMapButtonProps> = ({ onPress }) => {
     return (
         <TouchableOpacity style={mapButtonStyles.floatingMapButton} onPress={onPress}>
-            <LandLayerLocationIcon
-                width={width * 0.045}
-                height={width * 0.045}
-                fill="#FFFFFF"
+            {/* ✅ REEMPLAZAR SVG POR UIICON */}
+            <UIIcon
+                name="land-layer-location"
+                size={width * 0.045}
+                color="#FFFFFF"
                 style={{ marginRight: width * 0.02 }}
             />
             <Text style={mapButtonStyles.floatingMapButtonText}>

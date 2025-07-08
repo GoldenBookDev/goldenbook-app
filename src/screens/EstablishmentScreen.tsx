@@ -1,8 +1,11 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/navigationTypes';
+
+// ✅ AGREGAR: Import del contexto de autenticación
+import { useAuth } from '../context/AuthContext';
 
 // Import components
 import EstablishmentContacts from '../components/EstablishmentContacts';
@@ -25,7 +28,11 @@ const EstablishmentScreen: React.FC<Props> = ({ route, navigation }) => {
   const { establishmentId } = route.params;
   const [activeTab, setActiveTab] = useState<TabType>('Overview');
 
+  // ✅ AGREGAR: Hook de autenticación
+  const { user, isGuest } = useAuth();
 
+  // ✅ Estado local para el establishment con reviewCount actualizable
+  const [localEstablishment, setLocalEstablishment] = useState<any>(null);
 
   // Custom hooks para manejar datos y acciones
   const { establishment, loading } = useEstablishmentData(establishmentId);
@@ -35,7 +42,7 @@ const EstablishmentScreen: React.FC<Props> = ({ route, navigation }) => {
     userLikes,
     updatingLikes,
     handleFavoriteToggle,
-    handleLikeToggle,
+    handleLikeToggle: originalHandleLikeToggle,
     handleShare
   } = useEstablishmentActions(establishmentId, establishment, navigation);
 
@@ -49,7 +56,52 @@ const EstablishmentScreen: React.FC<Props> = ({ route, navigation }) => {
     goToNextImage
   } = useGalleryLightbox();
 
-  if (loading || !establishment) {
+  // ✅ Sincronizar localEstablishment con los datos del backend
+  useEffect(() => {
+    if (establishment) {
+      setLocalEstablishment(establishment);
+    }
+  }, [establishment]);
+
+  // ✅ CORREGIR: Función personalizada para manejar likes con validación de autenticación
+  const handleLikeToggleWithOptimism = async () => {
+    // ✅ PRIMERO: Verificar autenticación antes de hacer cambios optimistas
+    if (!user || isGuest) {
+      // Si no está logueado, solo mostrar el modal (lo maneja originalHandleLikeToggle)
+      await originalHandleLikeToggle();
+      return;
+    }
+
+    try {
+      const isCurrentlyLiked = userLikes.includes(establishmentId);
+
+      // ✅ Solo actualizar optimistamente si el usuario está logueado
+      setLocalEstablishment((prev: any) => {
+        if (!prev) return prev;
+
+        const newReviewCount = isCurrentlyLiked
+          ? Math.max(0, (prev.reviewCount || 0) - 1)  // Quitar like: -1 (nunca negativo)
+          : (prev.reviewCount || 0) + 1;              // Dar like: +1
+
+        return {
+          ...prev,
+          reviewCount: newReviewCount
+        };
+      });
+
+      // Ejecutar la función original de like
+      await originalHandleLikeToggle();
+
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      // ✅ En caso de error, revertir usando los datos originales del backend
+      if (establishment) {
+        setLocalEstablishment(establishment);
+      }
+    }
+  };
+
+  if (loading || !establishment || !localEstablishment) {
     return <LoadingScreen />;
   }
 
@@ -58,21 +110,21 @@ const EstablishmentScreen: React.FC<Props> = ({ route, navigation }) => {
       case 'Overview':
         return (
           <EstablishmentOverview
-            establishment={establishment}
+            establishment={localEstablishment} // ✅ Usar estado local
             onImagePress={openLightbox}
           />
         );
       case 'Contacts':
         return (
           <EstablishmentContacts
-            establishment={establishment}
+            establishment={localEstablishment} // ✅ Usar estado local
             navigation={navigation}
             establishmentId={establishmentId}
           />
         );
       case 'Reservations':
         return (
-          <EstablishmentReservations establishment={establishment} />
+          <EstablishmentReservations establishment={localEstablishment} /> // ✅ Usar estado local
         );
       default:
         return null;
@@ -84,7 +136,7 @@ const EstablishmentScreen: React.FC<Props> = ({ route, navigation }) => {
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
       <EstablishmentHeader
-        establishment={establishment}
+        establishment={localEstablishment} // ✅ Usar estado local
         navigation={navigation}
         isFavorite={isFavorite}
         isUpdatingFavorite={isUpdatingFavorite}
@@ -92,7 +144,7 @@ const EstablishmentScreen: React.FC<Props> = ({ route, navigation }) => {
         updatingLikes={updatingLikes}
         establishmentId={establishmentId}
         onFavoriteToggle={handleFavoriteToggle}
-        onLikeToggle={handleLikeToggle}
+        onLikeToggle={handleLikeToggleWithOptimism} // ✅ Usar función personalizada
         onShare={handleShare}
       />
 

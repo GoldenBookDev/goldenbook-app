@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
+  Linking,
   StyleSheet,
   Text,
   TextInput,
@@ -31,6 +32,21 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
+  // URLs de las políticas (con soporte multiidioma)
+  const getPrivacyPolicyURL = () => {
+    const locale = i18n.locale || 'en';
+    return locale.startsWith('pt')
+      ? 'https://www.goldenbook.app/privacy-policy/?lang=pt'
+      : 'https://www.goldenbook.app/privacy-policy/';
+  };
+
+  const getTermsConditionsURL = () => {
+    const locale = i18n.locale || 'en';
+    return locale.startsWith('pt')
+      ? 'https://www.goldenbook.app/terms-and-conditions/?lang=pt'
+      : 'https://www.goldenbook.app/terms-and-conditions/';
+  };
+
   useEffect(() => {
     if (email && !isValidEmail(email)) {
       setEmailError(i18n.t('auth.enterValidEmail'));
@@ -52,6 +68,21 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       setConfirmPasswordError('');
     }
   }, [email, password, confirmPassword]);
+
+  // Función para abrir enlaces
+  const openURL = async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Cannot open this URL');
+      }
+    } catch (error) {
+      console.error('Error opening URL:', error);
+      Alert.alert('Error', 'Failed to open link');
+    }
+  };
 
   const handleRegister = async () => {
     if (emailError || passwordError || confirmPasswordError || !acceptTerms) {
@@ -172,7 +203,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         <Text style={styles.errorText}>{confirmPasswordError}</Text>
       ) : null}
 
-      {/* Checkbox obligatorio para términos */}
+      {/* ✅ Checkbox obligatorio para términos CON ENLACES */}
       <View style={styles.checkboxContainer}>
         <CheckBox
           value={acceptTerms}
@@ -180,9 +211,24 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           color={acceptTerms ? '#00B383' : undefined}
           style={styles.checkbox}
         />
-        <Text style={styles.checkboxLabel}>
-          {i18n.t('auth.acceptTermsRequired')}
-        </Text>
+        <View style={styles.checkboxTextContainer}>
+          <Text style={styles.checkboxLabel}>
+            I accept the{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() => openURL(getTermsConditionsURL())}
+            >
+              Terms and Conditions
+            </Text>
+            {' '}and{' '}
+            <Text
+              style={styles.linkText}
+              onPress={() => openURL(getPrivacyPolicyURL())}
+            >
+              Privacy Policy
+            </Text>
+          </Text>
+        </View>
       </View>
 
       <TouchableOpacity
@@ -292,18 +338,30 @@ const styles = StyleSheet.create({
   },
   checkboxContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start', // ✅ Cambiar para alineación superior en texto multi-línea
     marginBottom: '5%',
     marginTop: '3%',
   },
   checkbox: {
     marginRight: 10,
+    marginTop: 2, // ✅ Pequeño ajuste para alineación visual
   },
   checkboxLabel: {
     fontSize: Dimensions.get('window').width * 0.03,
     fontFamily: 'EuclidSquare-Medium',
     color: '#161B33',
+  },
+  // ✅ NUEVO: Container para el texto con enlaces
+  checkboxTextContainer: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  // ✅ NUEVO: Estilo para los enlaces
+  linkText: {
+    fontSize: Dimensions.get('window').width * 0.03,
+    fontFamily: 'EuclidSquare-Medium',
+    color: '#1977F2', // Color azul para enlaces
+    textDecorationLine: 'underline',
   },
   divider: {
     height: 1,

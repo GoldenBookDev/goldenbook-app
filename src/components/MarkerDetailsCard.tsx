@@ -10,41 +10,31 @@ import {
 } from 'react-native';
 import { Establishment } from '../services/firestoreService';
 
-// Icons
-import BeachIcon from '../assets/images/icons/beach.svg';
-import CalendarIcon from '../assets/images/icons/calendar.svg';
-import CloseIcon from '../assets/images/icons/close.svg';
-import HandsIcon from '../assets/images/icons/hands.svg';
-import PeopleIcon from '../assets/images/icons/people.svg';
-import PlateIcon from '../assets/images/icons/plate.svg';
-import ServicesIcon from '../assets/images/icons/services.svg';
-import ShopIcon from '../assets/images/icons/shop.svg';
-import SwimmerIcon from '../assets/images/icons/swimmer.svg';
-import ThumbIcon from '../assets/images/icons/thumb.svg';
+import { CategoryIcon, UIIcon } from '../components/icons/IconSystem';
 
 const { width } = Dimensions.get('window');
 
-const iconMapping: { [key: string]: React.FC<any> } = {
-    'culture': HandsIcon,
-    'gastronomy': PlateIcon,
-    'sports': SwimmerIcon,
-    'events': CalendarIcon,
-    'shops': ShopIcon,
-    'beaches': BeachIcon,
-    'transport': ServicesIcon,
-    'activities': PeopleIcon,
+const iconMapping: { [key: string]: string } = {
+    'culture': 'culture',
+    'gastronomy': 'gastronomy',
+    'sports': 'sports',
+    'events': 'events',
+    'shops': 'shops',
+    'beaches': 'beaches',
+    'transport': 'transport',
+    'activities': 'activities',
 };
 
 interface CategoryWithTranslation {
     id: string;
     title: string;
-    icon: React.FC<any>;
-    translatedTitle?: string; // ← AÑADIR TRADUCCIÓN
+    icon: string;
+    translatedTitle?: string;
 }
 
 interface MarkerDetailsCardProps {
     establishment: Establishment | null;
-    categories: CategoryWithTranslation[]; // ← ACTUALIZAR TIPO
+    categories: CategoryWithTranslation[];
     onClose: () => void;
     onPress: () => void;
 }
@@ -67,15 +57,12 @@ const MarkerDetailsCard: React.FC<MarkerDetailsCardProps> = ({
         return url || '';
     };
 
-    // ========== FUNCIÓN ACTUALIZADA PARA OBTENER TÍTULO TRADUCIDO ==========
     const getCategoryTitle = (categoryId: string): string => {
         const category = categories.find(cat => cat.id === categoryId);
         if (category) {
-            // Usar translatedTitle si existe, sino usar title original
             const title = category.translatedTitle || category.title;
             return String(title || categoryId);
         }
-        // Fallback: capitalizar el ID si no se encuentra la categoría
         return String(categoryId || '').charAt(0).toUpperCase() + String(categoryId || '').slice(1);
     };
 
@@ -83,14 +70,15 @@ const MarkerDetailsCard: React.FC<MarkerDetailsCardProps> = ({
     const primaryCategory = establishment.categories && establishment.categories.length > 0
         ? establishment.categories[0]
         : 'gastronomy';
-    const CategoryIcon = iconMapping[primaryCategory] || PlateIcon;
-    const categoryTitle = getCategoryTitle(primaryCategory); // ← AHORA USA TRADUCCIÓN
+
+    const categoryIconId = iconMapping[primaryCategory] || 'gastronomy';
+    const categoryTitle = getCategoryTitle(primaryCategory);
 
     return (
         <View style={cardStyles.markerCardContainer}>
             <TouchableOpacity style={cardStyles.markerCard} onPress={onPress}>
                 <TouchableOpacity style={cardStyles.closeCardButton} onPress={onClose}>
-                    <CloseIcon width={width * 0.04} height={width * 0.04} />
+                    <UIIcon name="close" size={width * 0.04} color="#1A1A2E" />
                 </TouchableOpacity>
 
                 <Image
@@ -98,28 +86,31 @@ const MarkerDetailsCard: React.FC<MarkerDetailsCardProps> = ({
                     style={cardStyles.markerCardImage}
                 />
 
+                {/* ✅ NUEVO: Icono de categoría en esquina superior izquierda */}
+                <View style={cardStyles.categoryIconTopLeft}>
+                    <CategoryIcon
+                        category={categoryIconId}
+                        type="category"
+                        size={width * 0.08}
+                        iconSize={width * 0.04}
+                        iconColor="#FFFFFF"
+                        backgroundColor="rgba(0, 0, 0, 0.5)" // ✅ Fondo oscuro semi-transparente
+                    />
+                </View>
+
                 <View style={cardStyles.markerCardInfo}>
                     <Text style={cardStyles.markerCardTitle}>{establishment.name}</Text>
-                    <Text style={cardStyles.markerCardDescription}
-                        numberOfLines={2}>
+                    <Text style={cardStyles.markerCardDescription} numberOfLines={2}>
                         {(establishment.shortDescription || 'Estabelecimento')} • {establishment.address ? `${establishment.address.substring(0, 30)}...` : 'Morada não disponível'}
                     </Text>
                     <View style={cardStyles.thumbContainer}>
-                        <ThumbIcon width={width * 0.04} height={width * 0.04} style={{ marginRight: width * 0.01 }} />
+                        <UIIcon
+                            name="star"
+                            size={width * 0.04}
+                            color="#FFD700"
+                            style={{ marginRight: width * 0.01 }}
+                        />
                         <Text style={cardStyles.reviewCount}>{establishment.reviewCount || 0}</Text>
-                    </View>
-                </View>
-
-                <View style={cardStyles.markerCardCategoryBottom}>
-                    <View style={cardStyles.categoryTagContent}>
-                        {React.createElement(CategoryIcon, {
-                            width: width * 0.04,
-                            height: width * 0.04,
-                            fill: "#FFFFFF"
-                        })}
-                        <Text style={cardStyles.categoryTagText}>
-                            {String(categoryTitle || 'Categoria')}
-                        </Text>
                     </View>
                 </View>
             </TouchableOpacity>
@@ -141,7 +132,7 @@ const cardStyles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 12,
         flexDirection: 'row',
-        height: width * 0.25, // Añadir altura fija
+        height: width * 0.25,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -154,51 +145,39 @@ const cardStyles = StyleSheet.create({
     },
     markerCardImage: {
         width: width * 0.25,
-        height: '100%', // Cambiar a 100%
+        height: '100%',
         resizeMode: 'cover',
     },
     markerCardInfo: {
         flex: 1,
         padding: width * 0.03,
         justifyContent: 'center',
-        paddingTop: width * 0.04, // Añadir más espacio arriba del título
+        paddingTop: width * 0.04,
     },
     markerCardTitle: {
         fontSize: width * 0.04,
         fontFamily: 'EuclidSquare-SemiBold',
         color: '#1A1A2E',
-        marginTop: width * 0.02, // Aumentar espacio debajo del título
+        marginTop: width * 0.02,
     },
     markerCardDescription: {
         fontSize: width * 0.03,
         fontFamily: 'EuclidSquare-Regular',
         color: '#6C757D',
         marginBottom: width * 0.02,
-        lineHeight: width * 0.04, // Altura de línea consistente
+        lineHeight: width * 0.04,
     },
-    markerCardCategoryBottom: {
+    // ✅ NUEVO: Estilo para el icono de categoría en esquina superior izquierda
+    categoryIconTopLeft: {
         position: 'absolute',
-        bottom: width * 0.02,
-        right: width * 0.02,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
-        paddingHorizontal: width * 0.02,
-        paddingVertical: width * 0.01,
-        borderRadius: 4,
-    },
-    categoryTagContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    categoryTagText: {
-        color: 'white',
-        fontSize: width * 0.025,
-        fontFamily: 'EuclidSquare-Medium',
-        marginLeft: width * 0.01,
+        top: width * 0.02,
+        left: width * 0.02,
+        zIndex: 5,
     },
     thumbContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: width * 0.02, // Añadir espacio debajo del thumb
+        marginBottom: width * 0.02,
     },
     reviewCount: {
         fontSize: width * 0.03,

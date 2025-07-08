@@ -1,39 +1,42 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
-    Establishment,
-    getCategories,
-    getEstablishmentById,
-    getEstablishments,
-    getLocationById,
-    getTrendingEstablishments
+  Establishment,
+  getCategories,
+  getEstablishmentById,
+  getEstablishments,
+  getLocationById,
+  getTrendingEstablishments
 } from '../services/firestoreService';
 
-// Icons
-import BeachIcon from '../assets/images/icons/beach.svg';
-import CalendarIcon from '../assets/images/icons/calendar.svg';
-import HandsIcon from '../assets/images/icons/hands.svg';
-import PeopleIcon from '../assets/images/icons/people.svg';
-import PlateIcon from '../assets/images/icons/plate.svg';
-import ServicesIcon from '../assets/images/icons/services.svg';
-import ShopIcon from '../assets/images/icons/shop.svg';
-import SwimmerIcon from '../assets/images/icons/swimmer.svg';
+// ✅ NUEVO: Import del sistema de iconos
 
-const iconMapping: { [key: string]: React.FC<any> } = {
-  'culture': HandsIcon,
-  'gastronomy': PlateIcon,
-  'sports': SwimmerIcon,
-  'events': CalendarIcon,
-  'shops': ShopIcon,
-  'beaches': BeachIcon,
-  'transport': ServicesIcon,
-  'activities': PeopleIcon,
+// ❌ REMOVIDO: Icons SVG
+// import BeachIcon from '../assets/images/icons/beach.svg';
+// import CalendarIcon from '../assets/images/icons/calendar.svg';
+// import HandsIcon from '../assets/images/icons/hands.svg';
+// import PeopleIcon from '../assets/images/icons/people.svg';
+// import PlateIcon from '../assets/images/icons/plate.svg';
+// import ServicesIcon from '../assets/images/icons/services.svg';
+// import ShopIcon from '../assets/images/icons/shop.svg';
+// import SwimmerIcon from '../assets/images/icons/swimmer.svg';
+
+// ✅ NUEVO: Mapeo usando CategoryIcon (ASEGURAR QUE ESTÉ ASÍ)
+const iconMapping: { [key: string]: string } = {
+  'culture': 'culture',
+  'gastronomy': 'gastronomy',
+  'sports': 'sports',
+  'events': 'events',
+  'shops': 'shops',
+  'beaches': 'beaches',
+  'transport': 'transport',
+  'activities': 'activities',
 };
 
 interface CategoryWithIcon {
   id: string;
   title: string;
-  icon: React.FC<any>;
+  icon: string; // ✅ DEBE SER STRING, NO React.FC<any>
 }
 
 const isValidCoordinate = (coord: any): boolean => {
@@ -68,10 +71,11 @@ export const useMapData = (route: any, navigation: any) => {
         const categoriesData = await getCategories();
         if (!isMounted) return;
         
+        // ✅ NUEVO: Mapeo usando string IDs
         const formattedCategories = categoriesData.map(category => ({
           id: category.id,
           title: category.title,
-          icon: iconMapping[category.id] || HandsIcon
+          icon: iconMapping[category.id] || 'culture' // Fallback a culture
         }));
         setCategories(formattedCategories);
         
@@ -133,11 +137,11 @@ export const useMapData = (route: any, navigation: any) => {
     };
   }, []);
 
-  const handleCategoryFilter = async (categoryId: string) => {
+  const handleCategoryFilter = async (categoryId: string | null) => {
     if (!selectedLocation) return;
 
     try {
-      if (selectedCategory === categoryId) {
+      if (categoryId === null || selectedCategory === categoryId) {
         setSelectedCategory(null);
         const trendingEstablishments = await getTrendingEstablishments(selectedLocation);
         let finalEstablishments = trendingEstablishments;

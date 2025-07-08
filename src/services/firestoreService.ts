@@ -490,7 +490,6 @@ export const searchEstablishments = async (
     // Use offline search
     const searchResults = offlineService.searchCachedEstablishments(establishments, query);
     
-    console.log(`🔍 Search for "${query}" found ${searchResults.length} results`);
     return searchResults;
   } catch (error) {
     console.error('❌ Error in search:', error);

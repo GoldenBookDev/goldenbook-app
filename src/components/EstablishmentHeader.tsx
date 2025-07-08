@@ -11,15 +11,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Icons
-import ArrowLeftIcon from '../assets/images/icons/arrow-left-bg.svg';
-import HeartIcon from '../assets/images/icons/heart_white.svg';
-import ShareIcon from '../assets/images/icons/share.svg';
-import ThumbIcon from '../assets/images/icons/thumb.svg';
+import { UIIcon } from './icons/IconSystem'; // ✅ Importar UIIcon
 
 const { width } = Dimensions.get('window');
 
 interface EstablishmentHeaderProps {
-    establishment: any;
+    establishment: {
+        mainImage: string;
+        name: string;
+        reviewCount?: number;
+        [key: string]: any;
+    };
     navigation: any;
     isFavorite: boolean;
     isUpdatingFavorite: boolean;
@@ -54,7 +56,14 @@ const EstablishmentHeader: React.FC<EstablishmentHeaderProps> = ({
                     style={styles.backButton}
                     onPress={() => navigation.goBack()}
                 >
-                    <ArrowLeftIcon width={width * 0.1} height={width * 0.1} />
+                    {/* ✅ REEMPLAZAR SVG POR UIICON CON FONDO */}
+                    <View style={styles.iconBackground}>
+                        <UIIcon
+                            name="arrow-left-bg"
+                            size={width * 0.045} // Icono un poco más pequeño para el fondo
+                            color="#FFFFFF" // Blanco para contraste
+                        />
+                    </View>
                 </TouchableOpacity>
 
                 <View style={styles.headerActions}>
@@ -62,24 +71,33 @@ const EstablishmentHeader: React.FC<EstablishmentHeaderProps> = ({
                         style={styles.headerIconButton}
                         onPress={onShare}
                     >
-                        <ShareIcon width={20} height={20} />
+                        {/* ✅ REEMPLAZAR SVG POR UIICON CON FONDO */}
+                        <View style={styles.iconBackground}>
+                            <UIIcon
+                                name="share"
+                                size={18}
+                                color="#FFFFFF"
+                            />
+                        </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.headerIconButton, isFavorite && styles.headerIconButtonActive]}
+                        style={styles.headerIconButton}
                         onPress={onFavoriteToggle}
                         disabled={isUpdatingFavorite}
                     >
                         {isUpdatingFavorite ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
+                            <View style={styles.iconBackground}>
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            </View>
                         ) : (
-                            <HeartIcon
-                                width={20}
-                                height={20}
-                                fill={isFavorite ? '#FF6F61' : 'none'}
-                                stroke="#FFFFFF"
-                                strokeWidth="1"
-                            />
+                            <View style={styles.iconBackground}>
+                                <UIIcon
+                                    name="love"
+                                    size={18}
+                                    color={isFavorite ? '#FF6F61' : '#FFFFFF'}
+                                />
+                            </View>
                         )}
                     </TouchableOpacity>
                 </View>
@@ -95,24 +113,25 @@ const EstablishmentHeader: React.FC<EstablishmentHeaderProps> = ({
                         userLikes.includes(establishmentId) && styles.likeContainerActive,
                         updatingLikes.has(establishmentId) && styles.likeContainerDisabled
                     ]}
-                    onPress={onLikeToggle}
+                    onPress={onLikeToggle} // ✅ Usar directamente la función del padre
                     disabled={updatingLikes.has(establishmentId)}
                 >
                     {updatingLikes.has(establishmentId) ? (
                         <ActivityIndicator size="small" color="#495057" />
                     ) : (
                         <>
-                            <ThumbIcon
-                                width={18}
-                                height={18}
-                                fill={userLikes.includes(establishmentId) ? "#DAA520" : "#999"}
+                            {/* ✅ REEMPLAZAR SVG POR UIICON */}
+                            <UIIcon
+                                name="thumb"
+                                size={18}
+                                color={userLikes.includes(establishmentId) ? "#915A17" : "#999"}
                                 style={{ marginRight: 4 }}
                             />
                             <Text style={[
                                 styles.reviewCount,
                                 userLikes.includes(establishmentId) && styles.reviewCountActive
                             ]}>
-                                {establishment.reviewCount || 0}
+                                {establishment.reviewCount || 0} {/* ✅ Usar directamente la prop */}
                             </Text>
                         </>
                     )}
@@ -145,6 +164,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 20,
     },
+    // ✅ NUEVO ESTILO PARA EL FONDO DEL ICONO
+    iconBackground: {
+        width: width * 0.08,
+        height: width * 0.08,
+        backgroundColor: '#343A40', // ✅ Color de fondo específico
+        borderRadius: width * 0.02, // Esquinas redondeadas
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     headerActions: {
         flexDirection: 'row',
         paddingVertical: 20,
@@ -154,13 +182,13 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 4,
-        backgroundColor: 'rgba(70, 70, 70, 0.6)',
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 8,
+        // ✅ QUITAR backgroundColor ya que usamos iconBackground
     },
     headerIconButtonActive: {
-        backgroundColor: 'rgba(255, 111, 97, 0.8)',
+        // ✅ YA NO NECESARIO porque el color se maneja en el icono
     },
     titleContainer: {
         position: 'absolute',

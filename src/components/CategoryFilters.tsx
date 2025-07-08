@@ -7,19 +7,23 @@ import {
     TouchableOpacity
 } from 'react-native';
 
+// ✅ NUEVO: Import del sistema de iconos
+import { CategoryIcon } from '../components/icons/IconSystem';
+
 const { width } = Dimensions.get('window');
 
+// ✅ ACTUALIZADO: Interface para usar string en lugar de React.FC
 interface CategoryWithIcon {
     id: string;
     title: string;
-    icon: React.FC<any>;
-    translatedTitle?: string; // ← NUEVA PROPIEDAD OPCIONAL
+    icon: string; // ✅ CAMBIADO: ahora es string
+    translatedTitle?: string;
 }
 
 interface CategoryFiltersProps {
     categories: CategoryWithIcon[];
-    selectedCategory: string | null;
-    onCategoryPress: (categoryId: string) => void;
+    selectedCategory: string | null; // ✅ Mantener como nullable
+    onCategoryPress: (categoryId: string | null) => void; // ✅ Permitir null para deseleccionar
 }
 
 const CategoryFilters: React.FC<CategoryFiltersProps> = ({
@@ -35,28 +39,37 @@ const CategoryFilters: React.FC<CategoryFiltersProps> = ({
             style={categoryStyles.categoriesScroll}
         >
             {categories.map((category) => {
-                const Icon = category.icon;
                 // Usar translatedTitle si existe, sino usar title original
                 const displayTitle = category.translatedTitle || category.title;
+                const isSelected = selectedCategory === category.id;
 
                 return (
                     <TouchableOpacity
                         key={category.id}
                         style={[
                             categoryStyles.categoryButton,
-                            selectedCategory === category.id && categoryStyles.categoryButtonSelected
+                            isSelected && categoryStyles.categoryButtonSelected
                         ]}
-                        onPress={() => onCategoryPress(category.id)}
+                        onPress={() => {
+                            // ✅ CAMBIO: Si ya está seleccionado, deseleccionar (null)
+                            // Si no está seleccionado, seleccionar
+                            onCategoryPress(isSelected ? null : category.id);
+                        }}
                     >
-                        {React.createElement(Icon, {
-                            width: width * 0.045,
-                            height: width * 0.045
-                        })}
+                        {/* ✅ REEMPLAZADO: Icon component por CategoryIcon */}
+                        <CategoryIcon
+                            category={category.icon}
+                            type="category"
+                            size={width * 0.09}
+                            iconSize={width * 0.045}
+                            iconColor={isSelected ? "#915A17" : "#666"}
+                            backgroundColor={isSelected ? "transparent" : "#F8EDD2"}
+                        />
                         <Text style={[
                             categoryStyles.categoryButtonText,
-                            selectedCategory === category.id && categoryStyles.categoryButtonTextSelected
+                            isSelected && categoryStyles.categoryButtonTextSelected
                         ]}>
-                            {displayTitle} {/* ← USAR TÍTULO TRADUCIDO */}
+                            {displayTitle}
                         </Text>
                     </TouchableOpacity>
                 );
@@ -84,23 +97,27 @@ const categoryStyles = StyleSheet.create({
     categoryButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F5F5F5',
-        paddingVertical: width * 0.02,
-        paddingHorizontal: width * 0.03,
+        backgroundColor: '#F8F9FA',
+        paddingVertical: width * 0.01,
+        paddingHorizontal: width * 0.02,
         borderRadius: 20,
         marginRight: width * 0.02,
+        borderWidth: 1,
+        borderColor: '#E9ECEF',
     },
     categoryButtonSelected: {
-        backgroundColor: '#1A1A2E',
+        borderColor: '#DAA520',
+        backgroundColor: 'rgba(218, 165, 32, 0.2)',
     },
     categoryButtonText: {
         fontSize: width * 0.03,
         fontFamily: 'EuclidSquare-Medium',
-        color: '#1A1A2E',
+        color: '#495057',
         marginLeft: width * 0.01,
     },
     categoryButtonTextSelected: {
-        color: 'white',
+        color: '#915A17',
+        fontFamily: 'EuclidSquare-Medium',
     },
 });
 

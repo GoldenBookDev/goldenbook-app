@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import i18n from '../i18n';
 import {
   Establishment,
@@ -11,25 +11,16 @@ import {
 } from '../services/firestoreService';
 import { getLocationImage, normalizeLocationId } from '../utils/imageMapping';
 
-// Import SVG components para iconos
-import BeachIcon from '../assets/images/icons/beach.svg';
-import CalendarIcon from '../assets/images/icons/calendar.svg';
-import HandsIcon from '../assets/images/icons/hands.svg';
-import PeopleIcon from '../assets/images/icons/people.svg';
-import PlateIcon from '../assets/images/icons/plate.svg';
-import ServicesIcon from '../assets/images/icons/services.svg';
-import ShopIcon from '../assets/images/icons/shop.svg';
-import SwimmerIcon from '../assets/images/icons/swimmer.svg';
-
-const iconMapping: { [key: string]: React.FC<any> } = {
-  'culture': HandsIcon,
-  'gastronomy': PlateIcon,
-  'sports': SwimmerIcon,
-  'events': CalendarIcon,
-  'shops': ShopIcon,
-  'beaches': BeachIcon,
-  'transport': ServicesIcon,
-  'activities': PeopleIcon,
+// ✅ NUEVO: Mapeo usando strings
+const iconMapping: { [key: string]: string } = {
+  'culture': 'culture',
+  'gastronomy': 'gastronomy',
+  'sports': 'sports',
+  'events': 'events',
+  'shops': 'shops',
+  'beaches': 'beaches',
+  'transport': 'transport',
+  'activities': 'activities',
 };
 
 // Mapeo correcto de IDs de ubicación a ciudades
@@ -131,13 +122,69 @@ export const useHomeData = (route: any, navigation: any) => {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string>('');
   const [backgroundImage, setBackgroundImage] = useState<any>(null);
-  const [categories, setCategories] = useState<Array<{ id: string, title: string, icon: React.FC<any> }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string, title: string, icon: string }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Estados simplificados - solo las secciones que queremos mostrar
   const [allEstablishments, setAllEstablishments] = useState<Establishment[]>([]);
   const [featuredEstablishments, setFeaturedEstablishments] = useState<Establishment[]>([]);
   const [trendingEstablishments, setTrendingEstablishments] = useState<Establishment[]>([]);
+
+  // ✅ AGREGAR: Función para refrescar solo los establishments
+  const refreshEstablishments = useCallback(async () => {
+    if (!selectedLocation) return;
+
+    try {
+      // Obtener establecimientos frescos desde Firestore
+      const rawEstablishmentsData = await getEstablishments(selectedLocation);
+      
+      // Normalizar establecimientos
+      const allEstablishmentsData = rawEstablishmentsData.map(normalizeEstablishment);
+      
+      if (allEstablishmentsData.length > 0) {
+        setAllEstablishments(allEstablishmentsData);
+
+        // Obtener establecimientos destacados (featured)
+        try {
+          const rawFeatured = await getFeaturedEstablishments(selectedLocation);
+          
+          if (rawFeatured.length > 0) {
+            const featured = rawFeatured.map(normalizeEstablishment);
+            setFeaturedEstablishments(featured);
+          } else {
+            // Fallback: filtrar localmente
+            const localFeatured = allEstablishmentsData.filter(est => est.featured);
+            setFeaturedEstablishments(localFeatured);
+          }
+        } catch (error) {
+          console.error('❌ Error refrescando destacados:', error);
+          const localFeatured = allEstablishmentsData.filter(est => est.featured);
+          setFeaturedEstablishments(localFeatured);
+        }
+
+        // Obtener establecimientos trending
+        try {
+          const rawTrending = await getTrendingEstablishments(selectedLocation);
+          
+          if (rawTrending.length > 0) {
+            const trending = rawTrending.map(normalizeEstablishment);
+            setTrendingEstablishments(trending);
+          } else {
+            // Fallback: filtrar localmente
+            const localTrending = allEstablishmentsData.filter(est => est.trending);
+            setTrendingEstablishments(localTrending);
+          }
+        } catch (error) {
+          console.error('❌ Error refrescando trending:', error);
+          const localTrending = allEstablishmentsData.filter(est => est.trending);
+          setTrendingEstablishments(localTrending);
+        }
+
+      }
+    } catch (error) {
+      console.error('❌ Error refrescando establishments:', error);
+    }
+  }, [selectedLocation]);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -148,11 +195,16 @@ export const useHomeData = (route: any, navigation: any) => {
         try {
           const categoriesData = await getCategories();
           
-          const formattedCategories = categoriesData.map(category => ({
-            id: category.id,
-            title: i18n.t(`categories.${category.id}`) || category.title,
-            icon: iconMapping[category.id] || HandsIcon
-          }));
+          // ✅ NUEVO: Mapeo usando strings
+          const formattedCategories = categoriesData.map(category => {
+            const iconString = iconMapping[category.id] || 'culture';
+            return {
+              id: category.id,
+              title: i18n.t(`categories.${category.id}`) || category.title,
+              icon: iconString // ✅ STRING, no función
+            };
+          });
+          
           setCategories(formattedCategories);
         } catch (error) {
           console.error('❌ Error cargando categorías:', error);
@@ -196,14 +248,12 @@ export const useHomeData = (route: any, navigation: any) => {
 
         // Obtener establecimientos
         try {
-          
           const rawEstablishmentsData = await getEstablishments(location);
           
           // Normalizar establecimientos
           const allEstablishmentsData = rawEstablishmentsData.map(normalizeEstablishment);
           
           if (allEstablishmentsData.length > 0) {
-
             setAllEstablishments(allEstablishmentsData);
 
             // Obtener establecimientos destacados (featured)
@@ -269,12 +319,10 @@ export const useHomeData = (route: any, navigation: any) => {
 
   // Debug effect para monitorear cambios
   useEffect(() => {
-    
     if (allEstablishments.length > 0) {
       const withImages = allEstablishments.filter(e => e.mainImage && e.mainImage.trim() !== '').length;
       const featuredCount = allEstablishments.filter(e => e.featured).length;
       const trendingCount = allEstablishments.filter(e => e.trending).length;
-
     }
   }, [selectedLocation, locationName, allEstablishments, featuredEstablishments, trendingEstablishments, loading]);
 
@@ -287,6 +335,8 @@ export const useHomeData = (route: any, navigation: any) => {
     allEstablishments,
     featuredEstablishments,
     trendingEstablishments,
+    // ✅ AGREGAR: Función para refrescar establishments
+    refreshEstablishments,
     // Removemos todos los otros arrays que no necesitamos
     recommendedEstablishments: [], 
     newEstablishments: [],

@@ -11,13 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import i18n from '../i18n'; // Importar i18n
+import i18n from '../i18n';
 
-// Import SVG components
-import ArrowRightIcon from '../assets/images/icons/arrow-right-bg.svg';
-import CloseIcon from '../assets/images/icons/close.svg';
-import LoginIcon from '../assets/images/icons/login.svg'; 
-import UserIcon from '../assets/images/icons/user.svg';
+// Import UIIcon
+import { UIIcon } from './icons/IconSystem'; // ✅ Solo UIIcon necesario
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,13 +47,13 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
     {
       id: 'login',
       title: i18n.t('menu.signIn'),
-      icon: LoginIcon,
+      iconName: 'login', // ✅ Usar nombre de UIIcon
       onPress: () => navigation.navigate('LoginStep1'),
     },
     {
       id: 'register',
       title: i18n.t('menu.createAccount'),
-      icon: UserIcon,
+      iconName: 'user', // ✅ Usar nombre de UIIcon
       onPress: () => navigation.navigate('Register'),
     },
   ];
@@ -69,7 +66,7 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <Animated.View 
+        <Animated.View
           style={[
             styles.menuContainer,
             { transform: [{ translateX: slideAnim }] }
@@ -78,21 +75,22 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <CloseIcon width={width * 0.07} height={width * 0.07} />
+                {/* ✅ REEMPLAZAR CloseIcon por UIIcon */}
+                <UIIcon name="close" size={width * 0.07} color="#915A17" />
               </TouchableOpacity>
             </View>
 
             <View style={styles.guestInfoContainer}>
               <View style={styles.userAvatar}>
-                <Image 
-                  source={require('../assets/images/default-avatar.png')} 
-                  style={styles.avatarImage} 
+                <Image
+                  source={require('../assets/images/default-avatar.png')}
+                  style={styles.avatarImage}
                 />
               </View>
               <Text style={styles.guestTitle}>{i18n.t('menu.welcomeTitle')}</Text>
               <Text style={styles.guestSubtitle}>{i18n.t('menu.welcomeSubtitle')}</Text>
               <View style={styles.authButtonsContainer}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.authButton, styles.signInButton]}
                   onPress={() => {
                     onClose();
@@ -101,7 +99,7 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
                 >
                   <Text style={styles.signInButtonText}>{i18n.t('menu.signIn')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.authButton, styles.registerButton]}
                   onPress={() => {
                     onClose();
@@ -115,8 +113,8 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
 
             <View style={styles.menuItems}>
               {menuItems.map((item) => (
-                <TouchableOpacity 
-                  key={item.id} 
+                <TouchableOpacity
+                  key={item.id}
                   style={styles.menuItem}
                   onPress={() => {
                     onClose();
@@ -124,10 +122,22 @@ const GuestMenu: React.FC<GuestMenuProps> = ({ visible, onClose, navigation }) =
                   }}
                 >
                   <View style={styles.menuItemLeft}>
-                    <item.icon width={width * 0.06} height={width * 0.06}/>
+                    {/* ✅ REEMPLAZAR SVG por UIIcon */}
+                    <UIIcon
+                      name={item.iconName}
+                      size={width * 0.06}
+                      color="#915A17"
+                    />
                     <Text style={styles.menuItemText}>{item.title}</Text>
                   </View>
-                  <ArrowRightIcon width={width * 0.05} height={width * 0.05}/>
+                  {/* ✅ REEMPLAZAR ArrowRightIcon con fondo */}
+                  <View style={styles.arrowBackground}>
+                    <UIIcon
+                      name="arrow-right"
+                      size={width * 0.035}
+                      color="#343A40"
+                    />
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -256,6 +266,15 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-Medium',
     color: '#1A1A2E',
     marginLeft: width * 0.03,
+  },
+  // ✅ NUEVO ESTILO PARA EL FONDO DE LA FLECHA
+  arrowBackground: {
+    width: width * 0.08,
+    height: width * 0.08,
+    backgroundColor: '#F8F9FA', // ✅ Color correcto
+    borderRadius: width * 0.02, // ✅ Border radius más suave (cuadrado redondeado)
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   footer: {
     padding: width * 0.04,

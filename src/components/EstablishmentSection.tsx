@@ -1,6 +1,9 @@
 import React from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import ArrowRightIcon from '../assets/images/icons/arrow-right-bg.svg';
+
+// ✅ ACTUALIZAR: Usar UIIcon en lugar de SVG
+import { UIIcon } from './icons/IconSystem';
+
 import { Establishment } from '../services/firestoreService';
 import EstablishmentCard from './EstablishmentCard';
 
@@ -11,13 +14,27 @@ interface EstablishmentSectionProps {
     establishments: Establishment[];
     onEstablishmentPress: (establishmentId: string) => void;
     onSeeAll?: () => void;
+    // ✅ AGREGAR: Props para manejar acciones de usuario con valores opcionales
+    userFavorites?: string[];
+    updatingFavorites?: Set<string>;
+    userLikes?: string[];
+    updatingLikes?: Set<string>;
+    onFavoriteToggle?: (establishmentId: string) => void;
+    onLikeToggle?: (establishmentId: string) => void;
 }
 
 const EstablishmentSection: React.FC<EstablishmentSectionProps> = ({
     title,
     establishments,
     onEstablishmentPress,
-    onSeeAll
+    onSeeAll,
+    // ✅ AGREGAR: Destructuring de las nuevas props con defaults
+    userFavorites = [],
+    updatingFavorites = new Set(),
+    userLikes = [],
+    updatingLikes = new Set(),
+    onFavoriteToggle,
+    onLikeToggle
 }) => {
     if (!establishments || establishments.length === 0) {
         return null;
@@ -29,7 +46,12 @@ const EstablishmentSection: React.FC<EstablishmentSectionProps> = ({
                 <Text style={styles.sectionTitle}>{title}</Text>
                 {onSeeAll && (
                     <TouchableOpacity style={styles.seeAllButton} onPress={onSeeAll}>
-                        <ArrowRightIcon width={width * 0.05} height={width * 0.05} fill="#1A1A2E" />
+                        {/* ✅ REEMPLAZAR: ArrowRightIcon por UIIcon */}
+                        <UIIcon
+                            name="arrow-right-bg"
+                            size={width * 0.05}
+                            color="#1A1A2E"
+                        />
                     </TouchableOpacity>
                 )}
             </View>
@@ -43,6 +65,13 @@ const EstablishmentSection: React.FC<EstablishmentSectionProps> = ({
                         key={`${establishment.id}-${index}`}
                         establishment={establishment}
                         onPress={() => onEstablishmentPress(establishment.id)}
+                        // ✅ AGREGAR: Pasar props de usuario y acciones con validación
+                        isFavorite={userFavorites?.includes(establishment.id) || false}
+                        isUpdatingFavorite={updatingFavorites?.has(establishment.id) || false}
+                        isLiked={userLikes?.includes(establishment.id) || false}
+                        isUpdatingLike={updatingLikes?.has(establishment.id) || false}
+                        onFavoriteToggle={onFavoriteToggle ? () => onFavoriteToggle(establishment.id) : undefined}
+                        onLikeToggle={onLikeToggle ? () => onLikeToggle(establishment.id) : undefined}
                     />
                 ))}
             </ScrollView>

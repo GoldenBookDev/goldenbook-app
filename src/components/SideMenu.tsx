@@ -11,16 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext'; // Importar useAuth
+import { useAuth } from '../context/AuthContext';
 
-// Import SVG components
-import ArrowRightIcon from '../assets/images/icons/arrow-right-bg.svg';
-import CloseIcon from '../assets/images/icons/close.svg';
-import HeartIcon from '../assets/images/icons/heart.svg';
-import LogoutIcon from '../assets/images/icons/logout.svg';
-import SettingsIcon from '../assets/images/icons/settings.svg';
-import UserIcon from '../assets/images/icons/user.svg';
+// Import UIIcon
 import i18n from '../i18n';
+import { UIIcon } from './icons/IconSystem'; // ✅ Solo UIIcon necesario
 
 const { width, height } = Dimensions.get('window');
 
@@ -142,13 +137,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
       {
         id: 'favorites',
         title: i18n.t('menu.myFavorites'),
-        icon: HeartIcon,
+        iconName: 'love', // ✅ Usar nombre de UIIcon
         onPress: () => navigation.navigate('MyFavoritesScreen'),
       },
       {
         id: 'settings',
         title: i18n.t('menu.settings'),
-        icon: SettingsIcon,
+        iconName: 'settings', // ✅ Usar nombre de UIIcon
         onPress: () => navigation.navigate('SettingsScreen'),
       },
     ];
@@ -159,7 +154,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
         {
           id: 'profile',
           title: i18n.t('menu.myProfile'),
-          icon: UserIcon,
+          iconName: 'user', // ✅ Usar nombre de UIIcon
           onPress: () => navigation.navigate('ProfileScreen'),
         },
         ...baseItems
@@ -193,7 +188,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <CloseIcon width={width * 0.07} height={width * 0.07} />
+                {/* ✅ REEMPLAZAR CloseIcon por UIIcon */}
+                <UIIcon name="close" size={width * 0.07} color="#915A17" />
               </TouchableOpacity>
             </View>
 
@@ -259,10 +255,22 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
                   }}
                 >
                   <View style={styles.menuItemLeft}>
-                    <item.icon width={width * 0.06} height={width * 0.06} />
+                    {/* ✅ REEMPLAZAR SVG por UIIcon */}
+                    <UIIcon
+                      name={item.iconName}
+                      size={width * 0.06}
+                      color="#915A17"
+                    />
                     <Text style={styles.menuItemText}>{item.title}</Text>
                   </View>
-                  <ArrowRightIcon width={width * 0.05} height={width * 0.05} />
+                  {/* ✅ REEMPLAZAR ArrowRightIcon con fondo */}
+                  <View style={styles.arrowBackground}>
+                    <UIIcon
+                      name="arrow-right"
+                      size={width * 0.035}
+                      color="#343A40"
+                    />
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -270,7 +278,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ visible, onClose, navigation }) => 
             {/* Footer con botón de logout */}
             <View style={styles.footer}>
               <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <LogoutIcon width={width * 0.06} height={width * 0.06} />
+                {/* ✅ REEMPLAZAR LogoutIcon por UIIcon */}
+                <UIIcon name="logout" size={width * 0.06} color="#915A17" />
                 <Text style={styles.logoutText}>{i18n.t('menu.logOut')}</Text>
               </TouchableOpacity>
               <Text style={styles.versionText}>{i18n.t('menu.version')}</Text>
@@ -380,11 +389,6 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-Medium',
     color: 'white',
   },
-  googleUserText: {
-    fontSize: width * 0.03,
-    fontFamily: 'EuclidSquare-Medium',
-    color: '#2E7D32',
-  },
   menuItems: {
     flex: 1,
     paddingHorizontal: width * 0.04,
@@ -406,6 +410,15 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-Medium',
     color: '#1A1A2E',
     marginLeft: width * 0.03,
+  },
+  // ✅ NUEVO ESTILO PARA EL FONDO DE LA FLECHA
+  arrowBackground: {
+    width: width * 0.08,
+    height: width * 0.08,
+    backgroundColor: '#DEE2E6', // ✅ Fondo gris claro
+    borderRadius: width * 0.04,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   footer: {
     padding: width * 0.04,

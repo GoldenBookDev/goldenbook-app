@@ -37,7 +37,7 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
       const notificationStatus = await Notifications.getPermissionsAsync();
       const trackingStatus = Platform.OS === 'ios' 
         ? await TrackingTransparency.getTrackingPermissionsAsync()
-        : { status: 'granted' }; // Android no necesita este permiso
+        : { status: 'granted' };
 
       setStatus(prev => ({
         ...prev,
@@ -61,7 +61,6 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
   // Solicitar permiso de notificaciones
   const requestNotificationPermission = async (): Promise<boolean> => {
     try {
-      // Verificar estado actual primero
       const currentStatus = await Notifications.getPermissionsAsync();
       
       if (currentStatus.status === 'granted') {
@@ -69,7 +68,6 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
       }
 
       if (currentStatus.status === 'denied') {
-        // Ya fue denegado anteriormente, mostrar mensaje para ir a Settings
         if (showAlertOnDenied) {
           Alert.alert(
             i18n.t('permissions.notifications.denied.title'),
@@ -86,7 +84,6 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
         return false;
       }
 
-      // Solicitar permiso
       const { status } = await Notifications.requestPermissionsAsync({
         ios: {
           allowAlert: true,
@@ -100,7 +97,6 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
       });
 
       const granted = status === 'granted';
-       
 
       if (!granted && showAlertOnDenied) {
         Alert.alert(
@@ -112,7 +108,7 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
 
       return granted;
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      console.error('🔥 PERMISSIONS: Error requesting notification permission:', error);
       return false;
     }
   };
@@ -120,11 +116,10 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
   // Solicitar permiso de tracking (solo iOS)
   const requestTrackingPermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'ios') {
-      return true; // Android no necesita este permiso
+      return true;
     }
 
     try {
-      // Verificar si podemos solicitar el permiso
       const { status: currentStatus } = await TrackingTransparency.getTrackingPermissionsAsync();
       
       if (currentStatus === 'granted') {
@@ -135,50 +130,47 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
         return false;
       }
 
-      // Solo solicitar en iOS 14.5+
-      const systemVersion = Platform.Version;
-      if (typeof systemVersion === 'string' || systemVersion < 14.5) {
-        return true; // No disponible en versiones anteriores
-      }
-
-      // Solicitar el permiso
+      // ✅ FORZAR REQUEST INCLUSO SI NO HAY TRACKING REAL
       const { status } = await TrackingTransparency.requestTrackingPermissionsAsync();
       
       const granted = status === 'granted';
-      
-
       return granted;
     } catch (error) {
-      console.error('Error requesting tracking permission:', error);
+      console.error('🔥 PERMISSIONS: Error requesting tracking permission:', error);
       return false;
     }
   };
 
-  // Solicitar todos los permisos secuencialmente
+  // ✅ CORREGIDO: Solicitar todos los permisos secuencialmente
   const requestAllPermissions = async () => {
+
+    
     if (status.hasRequestedPermissions) {
+
       return status;
     }
+
 
     setStatus(prev => ({ ...prev, isLoading: true }));
 
     try {
-      // 1. Primero solicitar notificaciones
-      const notificationsGranted = await requestNotificationPermission();
-      
-      setStatus(prev => ({
-        ...prev,
-        notifications: notificationsGranted,
-      }));
 
-      // 2. Luego solicitar tracking (solo iOS, opcional)
+      // 1. Solicitar notificaciones
+      const notificationsGranted = await requestNotificationPermission();
+
+      
+      // 2. Solicitar tracking (solo iOS)
       let trackingGranted = true;
       if (Platform.OS === 'ios') {
-        // Esperar un poco entre solicitudes para mejor UX
+
         await new Promise(resolve => setTimeout(resolve, 500));
         trackingGranted = await requestTrackingPermission();
+   
+      } else {
+        console.log('🔥 PERMISSIONS: Skipping tracking (not iOS)');
       }
 
+      // ✅ ACTUALIZAR ESTADO FINAL
       const finalStatus = {
         notifications: notificationsGranted,
         tracking: trackingGranted,
@@ -186,16 +178,19 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
         hasRequestedPermissions: true,
       };
 
+
       setStatus(finalStatus);
 
-      // Callback cuando termine
-      if (onComplete) {
-        onComplete();
-      }
+      // ✅ LLAMAR CALLBACK DESPUÉS DE ACTUALIZAR ESTADO
+      setTimeout(() => {
+        if (onComplete) {
+          onComplete();
+        }
+      }, 100);
 
       return finalStatus;
     } catch (error) {
-      console.error('Error requesting permissions:', error);
+      console.error('🔥 PERMISSIONS: Error requesting permissions:', error);
       const errorStatus = {
         notifications: false,
         tracking: false,
@@ -211,6 +206,14 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
           i18n.t('permissions.error.message')
         );
       }
+
+      // ✅ LLAMAR CALLBACK INCLUSO SI HAY ERROR
+      setTimeout(() => {
+        console.log('🔥 PERMISSIONS: Calling onComplete callback after error');
+        if (onComplete) {
+          onComplete();
+        }
+      }, 100);
 
       return errorStatus;
     }
@@ -234,7 +237,6 @@ const usePermissions = (options: UsePermissionsOptions = {}) => {
   // Solicitar permisos automáticamente si está configurado
   useEffect(() => {
     if (requestOnMount && !status.hasRequestedPermissions) {
-      // Pequeño delay para asegurar que la navegación esté completa
       const timer = setTimeout(() => {
         requestAllPermissions();
       }, 1000);

@@ -20,8 +20,8 @@ import ScreenHeader from '../components/ScreenHeader';
 import { useFavorites } from '../hooks/useFavorites';
 import { useUserActions } from '../hooks/useUserActions';
 
-// Icons
-import HeartIcon from '../assets/images/icons/heart.svg';
+// ✅ REEMPLAZAR SVG por UIIcon
+import { UIIcon } from '../components/icons/IconSystem';
 
 const { width } = Dimensions.get('window');
 
@@ -63,7 +63,13 @@ const MyFavoritesScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   const renderEmptyState = () => (
     <EmptyState
-      icon={<HeartIcon width={width * 0.2} height={width * 0.2} fill="#E8A756" />}
+      icon={
+        <UIIcon
+          name="favorite"
+          size={width * 0.2}
+          color="#E8A756"
+        />
+      }
       title={i18n.t('favorites.noFavoritesYet')}
       description={i18n.t('favorites.discoverAmazingPlaces')}
       buttonText={i18n.t('favorites.startExploring')}

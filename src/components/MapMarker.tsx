@@ -3,28 +3,12 @@ import { Dimensions, StyleSheet, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { Establishment } from '../services/firestoreService';
 
-// Icons
-import BeachIcon from '../assets/images/icons/beach.svg';
-import CalendarIcon from '../assets/images/icons/calendar.svg';
-import HandsIcon from '../assets/images/icons/hands.svg';
-import PeopleIcon from '../assets/images/icons/people.svg';
-import PlateIcon from '../assets/images/icons/plate.svg';
-import ServicesIcon from '../assets/images/icons/services.svg';
-import ShopIcon from '../assets/images/icons/shop.svg';
-import SwimmerIcon from '../assets/images/icons/swimmer.svg';
+// ✅ NUEVO: Import del sistema de iconos
+import { CategoryIcon } from '../components/icons/IconSystem';
 
 const { width } = Dimensions.get('window');
 
-const iconMapping: { [key: string]: React.FC<any> } = {
-    'culture': HandsIcon,
-    'gastronomy': PlateIcon,
-    'sports': SwimmerIcon,
-    'events': CalendarIcon,
-    'shops': ShopIcon,
-    'beaches': BeachIcon,
-    'transport': ServicesIcon,
-    'activities': PeopleIcon,
-};
+// ✅ ELIMINADO: iconMapping ya no es necesario porque CategoryIcon maneja esto internamente
 
 // CAMBIO: Colores ahora para bordes en lugar de fondo
 const categoryColors = {
@@ -63,7 +47,6 @@ const MapMarker: React.FC<MapMarkerProps> = ({
         ? establishment.categories[0]
         : 'gastronomy';
 
-    const CategoryIcon = iconMapping[primaryCategory] || PlateIcon;
     const borderColor = categoryColors[primaryCategory as keyof typeof categoryColors] || '#E9A03B';
 
     return (
@@ -82,11 +65,17 @@ const MapMarker: React.FC<MapMarkerProps> = ({
                 },
                 isSelected && markerStyles.selectedMarker
             ]}>
-                {React.createElement(CategoryIcon, {
-                    width: width * 0.04,
-                    height: width * 0.04,
-                    fill: categoryColors[primaryCategory as keyof typeof categoryColors] || '#E9A03B'
-                })}
+                {/* ✅ REEMPLAZADO: CategoryIcon component sin el fondo de gota */}
+                <View style={markerStyles.iconContainer}>
+                    <CategoryIcon
+                        category={primaryCategory}
+                        type="category"
+                        size={width * 0.06} // Tamaño del contenedor del icono
+                        iconSize={width * 0.035} // Tamaño del icono en sí
+                        iconColor={categoryColors[primaryCategory as keyof typeof categoryColors] || '#E9A03B'}
+                        backgroundColor="transparent" // ✅ Sin fondo de gota para el mapa
+                    />
+                </View>
             </View>
         </Marker>
     );
@@ -116,6 +105,11 @@ const markerStyles = StyleSheet.create({
         borderRadius: width * 0.045,
         borderWidth: 3,
         borderColor: 'white',
+    },
+    // ✅ NUEVO: Contenedor para el icono sin fondo
+    iconContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
 

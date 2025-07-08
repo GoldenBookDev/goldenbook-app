@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsGuest(true);
       setUser(null);
       setUserData(null);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error setting guest mode:', error);
     }
@@ -58,8 +59,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Clear guest mode
   const clearGuestMode = async () => {
     try {
-      await AsyncStorage.removeItem('@goldenbook_guest_mode');
+      // Update local state immediately
       setIsGuest(false);
+
+      // Clear AsyncStorage
+      await AsyncStorage.removeItem('@goldenbook_guest_mode');
     } catch (error) {
       console.error('Error clearing guest mode:', error);
     }
@@ -68,36 +72,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Update user data in storage and state
   const updateUserData = async (data: any) => {
     try {
+      // Only update if not in guest mode
+      const currentGuestMode = await checkGuestMode();
+      if (currentGuestMode) {
+        return;
+      }
+
       await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(data));
       setUserData(data);
+      setIsGuest(false);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error updating user data:', error);
     }
   };
 
-  // Nueva función logout
+  // Logout function
   const logout = async () => {
     try {
-      // Cerrar sesión en Firebase
+      // Sign out from Firebase
       await signOut(auth);
 
-      // Limpiar datos locales
+      // Clear local data
       await AsyncStorage.removeItem('@goldenbook_auth_token');
       await AsyncStorage.removeItem('@goldenbook_user_data');
       await AsyncStorage.removeItem('@goldenbook_guest_mode');
 
-      // Actualizar estado del contexto
+      // Update context state
       setUser(null);
       setUserData(null);
       setIsGuest(false);
-
     } catch (error: any) {
       console.error('Error during logout:', error);
       throw error;
     }
   };
 
-  // Nueva función para eliminar cuenta
+  // Delete account function
   const deleteAccount = async () => {
     try {
       if (!user) {
@@ -106,34 +117,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const userId = user.uid;
 
-
-
-      // 1. Eliminar datos del usuario de Firestore
+      // 1. Delete user data from Firestore
       try {
         await deleteUserProfile(userId);
       } catch (error) {
         console.warn('Error deleting user profile from Firestore:', error);
-        // Continuar con la eliminación aunque falle esto
+        // Continue with deletion even if this fails
       }
 
-      // 2. Limpiar datos locales antes de eliminar la cuenta de Auth
+      // 2. Clear local data before deleting Auth account
       await AsyncStorage.removeItem('@goldenbook_auth_token');
       await AsyncStorage.removeItem('@goldenbook_user_data');
       await AsyncStorage.removeItem('@goldenbook_guest_mode');
 
-      // 3. Eliminar la cuenta de Firebase Authentication
+      // 3. Delete Firebase Authentication account
       await deleteUser(user);
 
-      // 4. Actualizar estado del contexto
+      // 4. Update context state
       setUser(null);
       setUserData(null);
       setIsGuest(false);
 
-
     } catch (error: any) {
       console.error('Error during account deletion:', error);
 
-      // Si el error es por reautenticación requerida
+      // If error is due to required re-authentication
       if (error?.code === 'auth/requires-recent-login') {
         throw new Error('For security reasons, please log out and log back in, then try deleting your account again.');
       }
@@ -144,47 +152,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize auth state
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+
     const initAuth = async () => {
       setIsLoading(true);
 
       // Check if user is in guest mode
       const guestMode = await checkGuestMode();
-      setIsGuest(guestMode);
 
       if (guestMode) {
+        setIsGuest(true);
+        setUser(null);
+        setUserData(null);
         setIsLoading(false);
         return;
       }
 
       // Listen for auth state changes
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         if (firebaseUser) {
+          // Small delay to allow clearGuestMode to complete
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          // Check if we're still in guest mode before proceeding
+          const currentGuestMode = await checkGuestMode();
+
+          if (currentGuestMode) {
+            setIsLoading(false);
+            return;
+          }
+
           setUser(firebaseUser);
+          setIsGuest(false);
 
           try {
-            // PRIMERO: Intentar obtener datos del perfil desde Firestore
+            // Try to get user profile data from Firestore
             let userDataFromFirestore = null;
             try {
               userDataFromFirestore = await getUserProfile(firebaseUser.uid);
             } catch (error) {
-              console.log('No user profile found in Firestore, will use Google data');
+              // No user profile found in Firestore, will use Firebase data
             }
 
-            // Si hay datos en Firestore, usarlos (datos personalizados del usuario)
+            // If Firestore data exists, use it (customized user data)
             if (userDataFromFirestore) {
               const firestoreUserData = {
                 uid: firebaseUser.uid,
                 displayName: userDataFromFirestore.displayName,
                 firstName: userDataFromFirestore.firstName || '',
                 lastName: userDataFromFirestore.lastName || '',
-                email: firebaseUser.email || '', // Siempre usar el email actual de Google
+                email: firebaseUser.email || '', // Always use current Firebase email
                 photoURL: userDataFromFirestore.photoURL || firebaseUser.photoURL || '',
               };
 
               await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(firestoreUserData));
               setUserData(firestoreUserData);
             } else {
-              // Si no hay datos en Firestore, crear perfil por primera vez con preferencias por defecto
+              // If no Firestore data, create profile for first time
               try {
                 const userProfile = {
                   displayName: firebaseUser.displayName || '',
@@ -195,18 +219,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
 
                 const defaultPreferences = {
-                  marketingConsent: true, // Por defecto acepta marketing
+                  marketingConsent: true,
                   termsAcceptedAt: new Date(),
                   privacyPolicyAcceptedAt: new Date(),
-                  language: 'en' // o detectar idioma del dispositivo
+                  language: 'en'
                 };
 
-                // Crear documento completo de usuario
                 await saveUserPreferences(firebaseUser.uid, defaultPreferences, userProfile);
-                console.log('Created complete user document for new Google user');
 
-                // Usar los datos que acabamos de crear
-                const googleUserData = {
+                const firebaseUserData = {
                   uid: firebaseUser.uid,
                   displayName: firebaseUser.displayName || '',
                   firstName: '',
@@ -215,23 +236,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   photoURL: firebaseUser.photoURL || '',
                 };
 
-                await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(googleUserData));
-                setUserData(googleUserData);
+                await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(firebaseUserData));
+                setUserData(firebaseUserData);
 
-                console.log('Using Google profile data with complete user document:', googleUserData.displayName);
               } catch (error) {
                 console.warn('Error creating complete user document:', error);
-
-                // Fallback: usar datos de Google si hay error
-                const fallbackUserData = {
+                // Fallback: use basic Firebase data
+                const basicUserData = {
                   uid: firebaseUser.uid,
                   displayName: firebaseUser.displayName || '',
+                  firstName: '',
+                  lastName: '',
                   email: firebaseUser.email || '',
                   photoURL: firebaseUser.photoURL || '',
                 };
-
-                await AsyncStorage.setItem('@goldenbook_user_data', JSON.stringify(fallbackUserData));
-                setUserData(fallbackUserData);
+                setUserData(basicUserData);
               }
             }
           } catch (error) {
@@ -240,16 +259,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null);
           setUserData(null);
+
+          // Only if not in guest mode, check if we should be
+          const currentGuestMode = await checkGuestMode();
+          if (currentGuestMode) {
+            setIsGuest(true);
+          } else {
+            setIsGuest(false);
+          }
         }
 
         setIsLoading(false);
       });
-
-      // Clean up subscription
-      return () => unsubscribe();
     };
 
     initAuth();
+
+    // Cleanup function
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const value = {

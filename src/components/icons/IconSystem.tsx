@@ -1,10 +1,31 @@
-// src/components/icons/SimpleIconSystem.tsx
-import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+// src/components/icons/IconSystem.tsx
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-// ============ INTERFACES SIMPLES ============
+// ============ IMPORTAR SVG PERSONALIZADOS ============
+// Deportes
+import HorseHeadIcon from '../../assets/images/icons/horse-head.svg';
+import SurfboardIcon from '../../assets/images/icons/surfboard.svg';
+import WindSurfIcon from '../../assets/images/icons/wind-surf.svg';
+
+// Naturaleza
+import ForestIcon from '../../assets/images/icons/forest.svg';
+import LandscapeIcon from '../../assets/images/icons/landscape.svg';
+
+// Cultura
+import CastleIcon from '../../assets/images/icons/castle.svg';
+import ChurchIcon from '../../assets/images/icons/church.svg';
+import HistoryIcon from '../../assets/images/icons/history.svg';
+import MuseumIcon from '../../assets/images/icons/museum.svg';
+import PantheonIcon from '../../assets/images/icons/pantheon.svg';
+
+// Gastronomía
+import PotIcon from '../../assets/images/icons/pot.svg';
+import WineryIcon from '../../assets/images/icons/winery.svg';
+
+// ============ INTERFACES ============
 interface DropBackgroundProps {
     size?: number;
     color?: string;
@@ -34,121 +55,178 @@ const DropBackground: React.FC<DropBackgroundProps> = ({
 }) => (
     <Svg width={size} height={size} viewBox="0 0 48 48" style={StyleSheet.absoluteFillObject}>
         <Path
-            d="M24 4C24 4 12 16 12 26C12 31.5228 17.4772 37 24 37C30.5228 37 36 31.5228 36 26C36 16 24 4 24 4Z"
+            d="M24 44C24 44 12 32 12 22C12 16.4772 17.4772 11 24 11C30.5228 11 36 16.4772 36 22C36 32 24 44 24 44Z"
             fill={color}
         />
     </Svg>
 );
 
-// ============ FUNCIÓN PARA OBTENER ICONO ============
-const getIconConfig = (category: string, type: 'category' | 'subcategory' = 'category') => {
-    // Categorías principales
-    const categoryIcons: any = {
-        culture: { lib: MaterialIcons, name: "account-balance" },
-        gastronomy: { lib: MaterialIcons, name: "restaurant" },
-        sports: { lib: MaterialIcons, name: "sports" },
-        events: { lib: MaterialIcons, name: "event" },
-        shops: { lib: MaterialIcons, name: "shopping-bag" },
-        beaches: { lib: MaterialIcons, name: "beach-access" },
-        transport: { lib: MaterialIcons, name: "directions" },
-        activities: { lib: MaterialIcons, name: "local-activity" }
-    };
+// ============ COMPONENTE SVG PERSONALIZADO ============
+const CustomSVGIcon: React.FC<{
+    SvgComponent: React.ComponentType<any>;
+    size: number;
+    color: string;
+}> = ({ SvgComponent, size, color }) => (
+    <SvgComponent
+        width={size}
+        height={size}
+        fill={color}
+        stroke={color}
+        strokeWidth={1.5} // ✅ Grosor consistente
+        style={{
+            maxWidth: size,
+            maxHeight: size
+        }}
+    />
+);
 
-    // Subcategorías
-    const subcategoryIcons: any = {
-        // Activities
-        experiences: { lib: MaterialIcons, name: "star-outline" },
-        health_wellness: { lib: MaterialIcons, name: "spa" },
-        hotels: { lib: Ionicons, name: "bed-outline" },
-        nightlife: { lib: MaterialIcons, name: "local-bar" },
-        real_estate: { lib: MaterialIcons, name: "home-outline" },
-        tours: { lib: MaterialIcons, name: "map" },
+// ============ MAPEO DE ICONOS PERSONALIZADOS ============
+const customIconsMapping: { [key: string]: React.ComponentType<any> } = {
+    // Deportes
+    'surfing': SurfboardIcon,
+    'horse_riding': HorseHeadIcon,
+    'water_sports': WindSurfIcon,
 
-        // Nature
-        gardens: { lib: MaterialIcons, name: "local-florist" },
-        natural_reserves: { lib: MaterialIcons, name: "forest" },
-        parks: { lib: MaterialIcons, name: "park" },
-        viewpoints: { lib: MaterialIcons, name: "visibility" },
-        waterfalls: { lib: MaterialIcons, name: "water-drop" },
+    // Naturaleza  
+    'natural_reserves': ForestIcon,
+    'viewpoints': LandscapeIcon,
 
-        // Culture
-        castles: { lib: FontAwesome5, name: "chess-rook" },
-        churches: { lib: MaterialIcons, name: "church" },
-        galleries: { lib: MaterialIcons, name: "palette" },
-        historical_sites: { lib: MaterialIcons, name: "account-balance" },
-        monuments: { lib: MaterialIcons, name: "monument" },
-        museums: { lib: MaterialIcons, name: "museum" },
+    // Cultura
+    'museums': MuseumIcon,
+    'historical_sites': HistoryIcon,
+    'monuments': PantheonIcon,
+    'churches': ChurchIcon,
+    'castles': CastleIcon,
 
-        // Events
-        concerts: { lib: MaterialIcons, name: "music-note" },
-        cultural_events: { lib: MaterialIcons, name: "event" },
-        exhibitions: { lib: MaterialIcons, name: "art-track" },
-        fairs: { lib: MaterialIcons, name: "festival" },
-        festivals: { lib: MaterialIcons, name: "celebration" },
-        sports_events: { lib: MaterialIcons, name: "sports" },
-
-        // Food & Drinks
-        bars: { lib: MaterialIcons, name: "local-bar" },
-        cafes: { lib: MaterialIcons, name: "local-cafe" },
-        local_markets: { lib: MaterialIcons, name: "storefront" },
-        restaurants: { lib: MaterialIcons, name: "restaurant" },
-        traditional_food: { lib: MaterialIcons, name: "restaurant-menu" },
-        wineries: { lib: MaterialIcons, name: "wine-bar" },
-
-        // Shopping
-        antiques: { lib: MaterialIcons, name: "history" },
-        crafts: { lib: MaterialIcons, name: "handyman" },
-        decoration: { lib: MaterialIcons, name: "home-work" },
-        fashion: { lib: MaterialIcons, name: "checkroom" },
-        jewellery: { lib: MaterialIcons, name: "diamond" },
-        local_shops: { lib: MaterialIcons, name: "store" },
-        malls: { lib: MaterialIcons, name: "local-mall" },
-        markets: { lib: MaterialIcons, name: "shopping-basket" },
-        souvenirs: { lib: MaterialIcons, name: "card-giftcard" },
-        traditional_shops: { lib: MaterialIcons, name: "store-mall-directory" },
-        watches: { lib: MaterialIcons, name: "watch" },
-
-        // Sports
-        cycling: { lib: MaterialIcons, name: "directions-bike" },
-        golf: { lib: MaterialIcons, name: "golf-course" },
-        hiking: { lib: MaterialIcons, name: "hiking" },
-        horse_riding: { lib: MaterialIcons, name: "pets" },
-        surfing: { lib: MaterialIcons, name: "surfing" },
-        water_sports: { lib: MaterialIcons, name: "kayaking" },
-
-        // Transport
-        airport: { lib: MaterialIcons, name: "flight" },
-        boats: { lib: MaterialIcons, name: "directions-boat" },
-        car_rental: { lib: MaterialIcons, name: "car-rental" }
-    };
-
-    const iconMap = type === 'subcategory' ? subcategoryIcons : categoryIcons;
-    return iconMap[category] || null;
+    // Gastronomía
+    'traditional_food': PotIcon,
+    'wineries': WineryIcon,
 };
 
-// ============ FUNCIÓN PARA ICONOS UI ============
+// ✅ Helper para iconos UI 
 const getUIIcon = (name: string) => {
     const uiIcons: any = {
         'arrow-left-bg': { lib: MaterialIcons, name: "arrow-back" },
         'menu-bg': { lib: MaterialIcons, name: "menu" },
         'land-layer-location': { lib: MaterialIcons, name: "map" },
-        search: { lib: MaterialIcons, name: "search" },
-        close: { lib: MaterialIcons, name: "close" },
-        favorite: { lib: MaterialIcons, name: "favorite-outline" },
-        share: { lib: MaterialIcons, name: "share" },
-        phone: { lib: MaterialIcons, name: "phone" },
-        website: { lib: MaterialIcons, name: "language" },
-        location: { lib: MaterialIcons, name: "location-on" },
-        star: { lib: MaterialIcons, name: "star" },
-        'star-outline': { lib: MaterialIcons, name: "star-outline" }
+        search: { lib: Ionicons, name: "search-outline" },
+        close: { lib: Ionicons, name: "close-outline" },
+        favorite: { lib: Ionicons, name: "heart-outline" },
+        love: { lib: Ionicons, name: "heart-outline" },
+        share: { lib: Ionicons, name: "share-outline" },
+        phone: { lib: Ionicons, name: "call-outline" },
+        website: { lib: Ionicons, name: "globe-outline" },
+        location: { lib: Ionicons, name: "location-outline" },
+        star: { lib: Ionicons, name: "star" },
+        'star-outline': { lib: Ionicons, name: "star-outline" },
+        thumb: { lib: Ionicons, name: "thumbs-up-outline" }, // ✅ THUMB ICON
+        send: { lib: Ionicons, name: "send-outline" },
+        mail: { lib: Ionicons, name: "mail-outline" },
+        time: { lib: Ionicons, name: "time-outline" },
+        login: { lib: Ionicons, name: "log-in-outline" },
+        user: { lib: Ionicons, name: "person-outline" },
+        'arrow-right': { lib: Ionicons, name: "arrow-forward-outline" },
+        'arrow-right-bg': { lib: MaterialIcons, name: "arrow-forward" },
+        settings: { lib: Ionicons, name: "settings-outline" },
+        logout: { lib: Ionicons, name: "log-out-outline" },
     };
 
     return uiIcons[name] || null;
 };
 
-// ============ COMPONENTES ============
+// ============ FUNCIÓN PARA OBTENER ICONO ============
+const getIconConfig = (category: string, type: 'category' | 'subcategory' = 'category') => {
 
-// Icono con fondo de gota
+    // ✅ VERIFICAR SI ES UN ICONO PERSONALIZADO (SVG)
+    if (customIconsMapping[category]) {
+        return {
+            type: 'custom',
+            component: customIconsMapping[category],
+            fallback: { lib: Ionicons, name: "help-outline" }
+        };
+    }
+
+    // ✅ VERIFICAR SI ES UN ICONO UI (como thumb, favorite, etc.)
+    const uiIconConfig = getUIIcon(category);
+    if (uiIconConfig) {
+        return uiIconConfig;
+    }
+
+    // Categorías principales (iconos Ionicons)
+    const categoryIcons: any = {
+        activities: { lib: Ionicons, name: "play-outline" },
+        beaches: { lib: Ionicons, name: "sunny-outline" },
+        culture: { lib: Ionicons, name: "library-outline" },
+        events: { lib: Ionicons, name: "calendar-outline" },
+        gastronomy: { lib: Ionicons, name: "restaurant-outline" },
+        shops: { lib: Ionicons, name: "bag-outline" },
+        sports: { lib: Ionicons, name: "fitness-outline" },
+        transport: { lib: Ionicons, name: "car-outline" }
+    };
+
+    // Subcategorías (Ionicons para las que no tienen SVG personalizado)
+    const subcategoryIcons: any = {
+        // Activities
+        experiences: { lib: Ionicons, name: "star-outline" },
+        health_wellness: { lib: Ionicons, name: "flower-outline" },
+        hotels: { lib: Ionicons, name: "bed-outline" },
+        nightlife: { lib: Ionicons, name: "wine-outline" },
+        real_estate: { lib: Ionicons, name: "home-outline" },
+        tours: { lib: Ionicons, name: "map-outline" },
+
+        // Nature (las que no tienen SVG personalizado)
+        gardens: { lib: Ionicons, name: "leaf-outline" },
+        parks: { lib: Ionicons, name: "footsteps-outline" },
+        waterfalls: { lib: Ionicons, name: "water-outline" },
+
+        // Culture (las que no tienen SVG personalizado)  
+        galleries: { lib: Ionicons, name: "image-outline" },
+
+        // Events
+        concerts: { lib: Ionicons, name: "musical-notes-outline" },
+        cultural_events: { lib: Ionicons, name: "calendar-outline" },
+        exhibitions: { lib: Ionicons, name: "easel-outline" },
+        fairs: { lib: Ionicons, name: "balloon-outline" },
+        festivals: { lib: Ionicons, name: "happy-outline" },
+        sports_events: { lib: Ionicons, name: "trophy-outline" },
+
+        // Food & Drinks (las que no tienen SVG personalizado)
+        bars: { lib: Ionicons, name: "wine-outline" },
+        cafes: { lib: Ionicons, name: "cafe-outline" },
+        local_markets: { lib: Ionicons, name: "storefront-outline" },
+        restaurants: { lib: Ionicons, name: "restaurant-outline" },
+
+        // Shopping
+        antiques: { lib: Ionicons, name: "time-outline" },
+        crafts: { lib: Ionicons, name: "hammer-outline" },
+        decoration: { lib: Ionicons, name: "brush-outline" },
+        fashion: { lib: Ionicons, name: "shirt-outline" },
+        jewellery: { lib: Ionicons, name: "diamond-outline" },
+        local_shops: { lib: Ionicons, name: "storefront-outline" },
+        malls: { lib: Ionicons, name: "business-outline" },
+        markets: { lib: Ionicons, name: "basket-outline" },
+        souvenirs: { lib: Ionicons, name: "gift-outline" },
+        traditional_shops: { lib: Ionicons, name: "bag-outline" },
+        watches: { lib: Ionicons, name: "watch-outline" },
+
+        // Sports (las que no tienen SVG personalizado)
+        cycling: { lib: Ionicons, name: "bicycle-outline" },
+        golf: { lib: Ionicons, name: "golf-outline" },
+        hiking: { lib: Ionicons, name: "walk-outline" },
+
+        // Transport
+        airport: { lib: Ionicons, name: "airplane-outline" },
+        boats: { lib: Ionicons, name: "boat-outline" },
+        car_rental: { lib: Ionicons, name: "car-outline" }
+    };
+
+    const iconMap = type === 'subcategory' ? subcategoryIcons : categoryIcons;
+    const result = iconMap[category] || { lib: Ionicons, name: "help-outline" };
+
+    return result;
+};
+
+// ============ COMPONENTE PRINCIPAL ============
 export const CategoryIcon: React.FC<CategoryIconProps> = ({
     category,
     size = 48,
@@ -158,28 +236,43 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
     type = "category",
     style = {}
 }) => {
-    const iconConfig = getIconConfig(category, type);
-
-    if (!iconConfig) {
-        return (
-            <View style={[styles.container, { width: size, height: size }, style]}>
-                <DropBackground size={size} color={backgroundColor} />
-                <MaterialIcons name="help-outline" size={iconSize} color={iconColor} />
-            </View>
-        );
+    // Validación de entrada
+    let categoryString = category;
+    if (typeof category === 'function') {
+        categoryString = 'culture';
     }
 
-    const IconComponent = iconConfig.lib;
+
+    const iconConfig = getIconConfig(categoryString, type);
 
     return (
         <View style={[styles.container, { width: size, height: size }, style]}>
+            {/* ✅ FONDO DE GOTA SIEMPRE PRESENTE */}
             <DropBackground size={size} color={backgroundColor} />
-            <IconComponent name={iconConfig.name} size={iconSize} color={iconColor} />
+
+            {/* ✅ RENDERIZAR ICONO SEGÚN TIPO */}
+            {iconConfig.type === 'custom' ? (
+                // SVG Personalizado
+                <CustomSVGIcon
+                    SvgComponent={iconConfig.component}
+                    size={iconSize}
+                    color={iconColor}
+                />
+            ) : iconConfig.lib ? (
+                // Ionicons/MaterialIcons
+                (() => {
+                    const IconComponent = iconConfig.lib;
+                    return <IconComponent name={iconConfig.name} size={iconSize} color={iconColor} />;
+                })()
+            ) : (
+                // Fallback
+                <Ionicons name="help-outline" size={iconSize} color={iconColor} />
+            )}
         </View>
     );
 };
 
-// Icono simple de UI
+// ✅ COMPONENTE UI ICON (SIN GOTA DE FONDO)
 export const UIIcon: React.FC<UIIconProps> = ({
     name,
     size = 24,

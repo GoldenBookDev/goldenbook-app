@@ -11,8 +11,8 @@ import {
 import i18n from '../i18n';
 import { Establishment } from '../services/firestoreService';
 
-// Icons
-import ThumbIcon from '../assets/images/icons/thumb.svg';
+// ✅ REEMPLAZAR SVG por UIIcon y CategoryIcon
+import { CategoryIcon } from '../components/icons/IconSystem';
 
 const { width } = Dimensions.get('window');
 
@@ -114,10 +114,14 @@ const FavoriteEstablishmentItem: React.FC<FavoriteEstablishmentItemProps> = ({
                             <ActivityIndicator size="small" color="#495057" />
                         ) : (
                             <>
-                                <ThumbIcon
-                                    width={width * 0.035}
-                                    height={width * 0.035}
-                                    fill={isLiked ? "#DAA520" : "#997B41"}
+                                {/* ✅ REEMPLAZAR ThumbIcon SVG por CategoryIcon con gota de fondo */}
+                                <CategoryIcon
+                                    category="thumb" // Usará el mapeo de UIIcon interno
+                                    size={width * 0.08} // Tamaño de la gota
+                                    iconSize={width * 0.035} // Tamaño del icono thumb
+                                    iconColor="#915A17" // Color del thumb
+                                    backgroundColor="rgba(218, 165, 32, 0.2)" // #DAA520 con 20% transparencia
+                                    type="category"
                                 />
                                 <Text style={[
                                     favoriteItemStyles.reviewCount,
@@ -215,13 +219,12 @@ const favoriteItemStyles = StyleSheet.create({
     likeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: width * 0.03,
-        paddingVertical: width * 0.015,
+        paddingHorizontal: width * 0.02,
+        paddingVertical: width * 0.01,
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E9ECEF',
         backgroundColor: '#F8F9FA',
-        gap: width * 0.01,
         minWidth: width * 0.16,
         justifyContent: 'center',
     },

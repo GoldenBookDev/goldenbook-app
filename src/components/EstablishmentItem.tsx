@@ -12,8 +12,7 @@ import i18n from '../i18n';
 import { Establishment } from '../services/firestoreService';
 
 // Icons
-import ThumbIcon from '../assets/images/icons/thumb.svg';
-import ThumbGrayIcon from '../assets/images/icons/thumb_gray.svg';
+import { UIIcon } from './icons/IconSystem'; // ✅ Solo UIIcon necesario
 
 const { width } = Dimensions.get('window');
 
@@ -121,18 +120,12 @@ const EstablishmentItem: React.FC<EstablishmentItemProps> = ({
                             <ActivityIndicator size="small" color="#495057" />
                         ) : (
                             <>
-                                {isLiked ? (
-                                    <ThumbIcon
-                                        width={width * 0.035}
-                                        height={width * 0.035}
-                                        fill="#DAA520"
-                                    />
-                                ) : (
-                                    <ThumbGrayIcon
-                                        width={width * 0.035}
-                                        height={width * 0.035}
-                                    />
-                                )}
+                                {/* ✅ SIMPLIFICADO: Solo el icono sin fondo circular */}
+                                <UIIcon
+                                    name="thumb"
+                                    size={width * 0.035}
+                                    color={isLiked ? "#915A17" : "#666"}
+                                />
                                 <Text style={[
                                     styles.reviewCount,
                                     isLiked && styles.reviewCountActive
@@ -227,7 +220,7 @@ const styles = StyleSheet.create({
     establishmentCategory: {
         fontSize: width * 0.035,
         fontFamily: 'EuclidSquare-Regular',
-        color: '#997B41',
+        color: '#915A17', // ✅ Color consistente
     },
     establishmentLocation: {
         fontSize: width * 0.035,
@@ -243,19 +236,19 @@ const styles = StyleSheet.create({
     likeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: width * 0.03,
-        paddingVertical: width * 0.015,
+        paddingHorizontal: width * 0.02,
+        paddingVertical: width * 0.01,
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E9ECEF',
         backgroundColor: '#F8F9FA',
-        gap: width * 0.01,
-        minWidth: width * 0.16,
+        minWidth: width * 0.14,
         justifyContent: 'center',
+        gap: width * 0.01,
     },
     likeContainerActive: {
         borderColor: '#DAA520',
-        backgroundColor: '#F8EDD2',
+        backgroundColor: 'rgba(218, 165, 32, 0.2)',
     },
     likeContainerDisabled: {
         opacity: 0.7,
@@ -266,7 +259,8 @@ const styles = StyleSheet.create({
         color: '#495057',
     },
     reviewCountActive: {
-        color: '#495057',
+        color: '#915A17', // ✅ Color dorado para el texto cuando está activo
+        fontFamily: 'EuclidSquare-Medium', // ✅ Un poco más bold cuando está activo
     },
     accessibilityAndStatus: {
         flexDirection: 'row',

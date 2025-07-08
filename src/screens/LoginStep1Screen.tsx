@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import useAuthentication from '../hooks/useAuthentication';
-import usePermissions from '../hooks/usePermissions'; // Importar el hook
+import usePermissions from '../hooks/usePermissions';
 import i18n from '../i18n';
 import { isValidEmail } from '../utils/validation';
 
@@ -26,11 +26,10 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { loginWithGoogle, loginAsGuest } = useAuthentication();
   const { setAsGuest } = useAuth();
 
-  // Hook de permisos que se ejecutará después del login exitoso
+  // Hook de permisos con debug
   const { requestAllPermissions, isLoading: isRequestingPermissions } = usePermissions({
-    requestOnMount: false, // No solicitar automáticamente
+    requestOnMount: false,
     onComplete: () => {
-      // Navegar a LocationSelection cuando los permisos terminen
       navigation.reset({
         index: 0,
         routes: [{ name: 'LocationSelection' }],
@@ -52,7 +51,9 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     setIsEmailValid(isValidEmail(email));
   }, [email]);
 
+  // ✅ USEEFFECT CORREGIDO - SIN requestAllPermissions en dependencies
   useEffect(() => {
+
     if (response?.type === 'success') {
       const { id_token } = response.params;
 
@@ -61,23 +62,24 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
       loginWithGoogle(id_token)
         .then((success) => {
           if (success) {
-            // En lugar de navegar directamente, solicitar permisos primero
             requestAllPermissions();
           } else {
             Alert.alert('Error', 'No se pudo iniciar sesión con Google');
           }
         })
         .catch((error) => {
-          console.error("Error en login con Google:", error);
+          console.error("🔥 LOGIN: Error en login con Google:", error);
           Alert.alert('Error', error?.message || 'Error al iniciar sesión con Google');
         })
         .finally(() => {
           setIsLoggingIn(false);
         });
+    } else if (response?.type) {
+      console.log('🔥 LOGIN: Non-success response:', response.type);
     }
-  }, [response, requestAllPermissions]);
+  }, [response]); // ✅ SOLO response en dependencies
 
-
+  // ✅ DEBUG DE ESTADOS
 
   const handleContinue = () => {
     if (!isEmailValid) {
@@ -93,17 +95,15 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       await setAsGuest();
 
-      // En lugar de navegar directamente, solicitar permisos primero
       requestAllPermissions();
     } catch (error) {
-      console.error("Error al establecer modo invitado:", error);
+      console.error("🔥 GUEST: Error al establecer modo invitado:", error);
 
       try {
         await loginAsGuest();
-        // En lugar de navegar directamente, solicitar permisos primero
         requestAllPermissions();
       } catch (fallbackError) {
-        console.error("Error en fallback:", fallbackError);
+        console.error("🔥 GUEST: Error en fallback:", fallbackError);
         Alert.alert('Error', 'No se pudo entrar en modo invitado');
       }
     } finally {
@@ -111,9 +111,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }
   };
 
-  // Mostrar loading si está logueando o solicitando permisos
   const showLoading = isLoggingIn || isRequestingPermissions;
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{i18n.t('auth.loginTitle')}</Text>
@@ -160,7 +158,9 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       <TouchableOpacity
         style={styles.googleButton}
-        onPress={() => promptAsync()}
+        onPress={() => {
+          promptAsync();
+        }}
         disabled={showLoading}
       >
         <View style={styles.googleContent}>

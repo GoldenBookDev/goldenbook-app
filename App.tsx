@@ -5,7 +5,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/context/AuthContext';
-import AppNavigator, { linking } from './src/navigation/AppNavigator'; // Importar linking
+import AppNavigator, { linking } from './src/navigation/AppNavigator';
+// ✅ NUEVO: Importar configuración de notificaciones
+import { configureNotifications } from './src/utils/notificationConfig';
 
 // Impide que la pantalla de splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -23,8 +25,12 @@ export default function App() {
           'EuclidSquare-SemiBold': require('./src/assets/fonts/EuclidSquare-SemiBold.ttf'),
           'EuclidSquare-Bold': require('./src/assets/fonts/EuclidSquare-Bold.ttf'),
         });
+
+        // ✅ NUEVO: Configurar notificaciones
+        await configureNotifications();
+
       } catch (e) {
-        console.warn(e);
+        console.warn('❌ Error during app initialization:', e);
       } finally {
         // Indica que la aplicación está lista
         setAppIsReady(true);

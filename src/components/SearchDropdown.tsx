@@ -1,14 +1,14 @@
 import React from 'react';
 import {
   Dimensions,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
 } from 'react-native';
-import { Establishment } from '../services/firestoreService';
 import i18n from '../i18n'; // Importar i18n
+import { Establishment } from '../services/firestoreService';
 
 const { width } = Dimensions.get('window');
 
@@ -36,8 +36,8 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
       <View style={styles.header}>
         <Text style={styles.headerText}>{i18n.t('search.suggestions')}</Text>
       </View>
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.resultsContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -57,7 +57,7 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
           </TouchableOpacity>
         ))}
       </ScrollView>
-      
+
       {onShowAllResults && results.length > 0 && (
         <TouchableOpacity
           style={styles.showAllButton}
@@ -72,11 +72,6 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: width * 0.15, // Position below search bar
-    left: width * 0.04,
-    right: width * 0.04,
-    maxHeight: width * 0.8,
     backgroundColor: 'white',
     borderRadius: 10,
     elevation: 5,
@@ -84,7 +79,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 1000,
+    marginHorizontal: width * 0.04,
+    marginTop: width * 0.01, // ✅ PEQUEÑO MARGEN SUPERIOR
+    maxHeight: width * 0.8,
   },
   header: {
     paddingHorizontal: width * 0.04,
