@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     backgroundColor: 'white',
-    paddingHorizontal: width * 0.06,
+    // ✅ CAMBIO: Remover paddingHorizontal general - cada componente maneja su propio padding
     paddingTop: width * 0.06,
     paddingBottom: width * 0.2,
   },
@@ -537,11 +537,15 @@ const styles = StyleSheet.create({
     fontFamily: 'EuclidSquare-SemiBold',
     marginBottom: width * 0.03,
     color: '#1A1A2E',
+    // ✅ AGREGAR: Padding horizontal solo para el título
+    paddingHorizontal: width * 0.06,
   },
   searchContainer: {
     position: 'relative',
     zIndex: 100,
     marginBottom: width * 0.04,
+    // ✅ AGREGAR: Padding horizontal solo para el search
+    paddingHorizontal: width * 0.06,
   },
   searchBar: {},
   floatingMapButton: {

@@ -1,3 +1,4 @@
+import * as AppleAuthentication from 'expo-apple-authentication';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import React, { useEffect, useState } from 'react';
@@ -6,6 +7,7 @@ import {
   Alert,
   Dimensions,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import useAuthentication from '../hooks/useAuthentication';
 import usePermissions from '../hooks/usePermissions';
 import i18n from '../i18n';
+import { signInWithApple } from '../services/authService';
 import { isValidEmail } from '../utils/validation';
 
 const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -26,7 +29,6 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const { loginWithGoogle, loginAsGuest } = useAuthentication();
   const { setAsGuest } = useAuth();
 
-  // Hook de permisos con debug
   const { requestAllPermissions, isLoading: isRequestingPermissions } = usePermissions({
     requestOnMount: false,
     onComplete: () => {
@@ -43,19 +45,23 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
     iosClientId: '659096031354-gl59hae39tch43jsq8oefud2fcrvgd61.apps.googleusercontent.com',
     webClientId: '659096031354-d07tgprkpful0dn5tgbtkbfrvqok3leo.apps.googleusercontent.com',
     redirectUri: AuthSession.makeRedirectUri({
-      useProxy: true,
-    } as AuthSession.AuthSessionRedirectUriOptions),
+      scheme: 'com.bwebstudio.goldenbook',
+    }),
   });
 
   useEffect(() => {
     setIsEmailValid(isValidEmail(email));
   }, [email]);
 
-  // ✅ USEEFFECT CORREGIDO - SIN requestAllPermissions en dependencies
   useEffect(() => {
-
     if (response?.type === 'success') {
       const { id_token } = response.params;
+
+      if (!id_token) {
+        console.error('🔥 LOGIN: No se recibió ID token de Google');
+        Alert.alert('Error', 'No se pudo obtener el token de Google');
+        return;
+      }
 
       setIsLoggingIn(true);
 
@@ -68,18 +74,32 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
           }
         })
         .catch((error) => {
-          console.error("🔥 LOGIN: Error en login con Google:", error);
+          console.error('🔥 LOGIN: Error en login con Google:', error);
           Alert.alert('Error', error?.message || 'Error al iniciar sesión con Google');
         })
         .finally(() => {
           setIsLoggingIn(false);
         });
-    } else if (response?.type) {
-      console.log('🔥 LOGIN: Non-success response:', response.type);
+    } else if (response?.type === 'error') {
+      console.error('🔥 LOGIN: Error en Google OAuth:', response.error);
+      Alert.alert('Error', 'Error en la autenticación con Google');
     }
-  }, [response]); // ✅ SOLO response en dependencies
+  }, [response]);
 
-  // ✅ DEBUG DE ESTADOS
+  const handleAppleLogin = async () => {
+    try {
+      setIsLoggingIn(true);
+      const success = await signInWithApple();
+      if (success) {
+        requestAllPermissions();
+      }
+    } catch (error) {
+      console.error('🔥 LOGIN: Apple Sign-In error:', error);
+      Alert.alert('Error', (error as any)?.message || 'Apple Sign-In failed.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   const handleContinue = () => {
     if (!isEmailValid) {
@@ -92,18 +112,15 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const handleContinueWithoutAccount = async () => {
     try {
       setIsLoggingIn(true);
-
       await setAsGuest();
-
       requestAllPermissions();
     } catch (error) {
-      console.error("🔥 GUEST: Error al establecer modo invitado:", error);
-
+      console.error('🔥 GUEST: Error al establecer modo invitado:', error);
       try {
         await loginAsGuest();
         requestAllPermissions();
       } catch (fallbackError) {
-        console.error("🔥 GUEST: Error en fallback:", fallbackError);
+        console.error('🔥 GUEST: Error en fallback:', fallbackError);
         Alert.alert('Error', 'No se pudo entrar en modo invitado');
       }
     } finally {
@@ -112,6 +129,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   const showLoading = isLoggingIn || isRequestingPermissions;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{i18n.t('auth.loginTitle')}</Text>
@@ -120,10 +138,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#00B383" />
           <Text style={styles.loadingText}>
-            {isRequestingPermissions
-              ? i18n.t('permissions.requesting')
-              : i18n.t('auth.signingIn')
-            }
+            {isRequestingPermissions ? i18n.t('permissions.requesting') : i18n.t('auth.signingIn')}
           </Text>
         </View>
       )}
@@ -158,9 +173,7 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       <TouchableOpacity
         style={styles.googleButton}
-        onPress={() => {
-          promptAsync();
-        }}
+        onPress={() => promptAsync()}
         disabled={showLoading}
       >
         <View style={styles.googleContent}>
@@ -171,6 +184,16 @@ const LoginStep1Screen: React.FC<{ navigation: any }> = ({ navigation }) => {
           <Text style={styles.googleButtonText}>{i18n.t('auth.continueWithGoogle')}</Text>
         </View>
       </TouchableOpacity>
+
+      {Platform.OS === 'ios' && (
+        <AppleAuthentication.AppleAuthenticationButton
+          buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+          buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+          cornerRadius={5}
+          style={{ width: '100%', height: 44, marginBottom: 20 }}
+          onPress={handleAppleLogin}
+        />
+      )}
 
       <View style={styles.signupContainer}>
         <Text style={styles.signupText}>{i18n.t('auth.dontHaveAccount')}</Text>

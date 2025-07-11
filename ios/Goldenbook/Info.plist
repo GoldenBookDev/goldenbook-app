@@ -4,6 +4,8 @@
   <dict>
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true/>
+    <key>CFBundleAllowMixedLocalizations</key>
+    <true/>
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
@@ -56,20 +58,32 @@
     <key>NSCameraUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your camera</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Goldenbook necesita acceder a tu ubicación para mostrarte lugares cercanos.</string>
+    <dict>
+      <key>en</key>
+      <string>Goldenbook needs access to your location to show you nearby places.</string>
+      <key>pt-PT</key>
+      <string>O Goldenbook precisa de aceder à sua localização para mostrar-lhe locais próximos.</string>
+    </dict>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>Goldenbook usa tu ubicación para mostrarte lugares cercanos incluso cuando la app está en segundo plano.</string>
+    <dict>
+      <key>en</key>
+      <string>Goldenbook uses your location to show you nearby places even when the app is in the background.</string>
+      <key>pt-PT</key>
+      <string>O Goldenbook utiliza a sua localização para mostrar-lhe locais próximos, mesmo quando a app está em segundo plano.</string>
+    </dict>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Goldenbook usa tu ubicación para mostrarte lugares cercanos.</string>
+    <dict>
+      <key>en</key>
+      <string>Goldenbook uses your location to show you nearby places.</string>
+      <key>pt-PT</key>
+      <string>O Goldenbook utiliza a sua localização para mostrar-lhe locais próximos.</string>
+    </dict>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>The app accesses your photos to let you share them with your friends.</string>
-    
-    <!-- ✅ CLAVES AGREGADAS PARA NOTIFICACIONES Y TRACKING -->
     <key>NSUserTrackingUsageDescription</key>
     <string>Goldenbook uses tracking to provide personalized content and improve user experience.</string>
-    
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

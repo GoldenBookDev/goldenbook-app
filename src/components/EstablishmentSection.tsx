@@ -42,6 +42,7 @@ const EstablishmentSection: React.FC<EstablishmentSectionProps> = ({
 
     return (
         <View style={styles.section}>
+            {/* Header con padding solo a la izquierda */}
             <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>{title}</Text>
                 {onSeeAll && (
@@ -55,10 +56,13 @@ const EstablishmentSection: React.FC<EstablishmentSectionProps> = ({
                     </TouchableOpacity>
                 )}
             </View>
+
+            {/* ScrollView que se extiende hasta el borde derecho */}
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.horizontalScrollView}
+                contentContainerStyle={styles.scrollContent}
             >
                 {establishments.map((establishment, index) => (
                     <EstablishmentCard
@@ -88,6 +92,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: width * 0.03,
+        // ✅ CAMBIO: Solo padding horizontal para mantener alineación con otros elementos
+        paddingHorizontal: width * 0.06,
     },
     sectionTitle: {
         fontSize: width * 0.045,
@@ -97,7 +103,14 @@ const styles = StyleSheet.create({
     seeAllButton: {
         padding: width * 0.01,
     },
-    horizontalScrollView: {},
+    horizontalScrollView: {
+        // Sin padding horizontal - se extiende hasta los bordes
+    },
+    scrollContent: {
+        // ✅ NUEVO: Padding solo al inicio para alinear con otros elementos
+        paddingLeft: width * 0.06,
+        paddingRight: width * 0.02, // Pequeño padding al final para no tocar completamente el borde
+    },
 });
 
 export default EstablishmentSection;

@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 16.0.0"
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -12,19 +13,36 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "simulator": true,
+        "buildConfiguration": "Release"
+      }
     },
-    "production": {},
+    "testflight": {
+      "ios": {
+        "buildConfiguration": "Release",
+        "autoIncrement": true
+      }
+    },
+    "production": {
+      "ios": {
+        "autoIncrement": true
+      }
+    },
     "development-simulator": {
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "buildConfiguration": "Debug",
+        "resourceClass": "default"
       },
       "environment": "development"
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "testflight": {}
   }
 }

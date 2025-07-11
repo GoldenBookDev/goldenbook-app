@@ -27,7 +27,8 @@
     "acceptTermsRequired": "I accept the Terms and Conditions and Privacy Policy",
     "receivePromotionalEmails": "I want to receive exclusive offers and recommendations",
     "signingIn": "Signing in...",
-    "enterPassword": "Please enter your password"
+    "enterPassword": "Please enter your password",
+    "passwordRequirements": "Password must be at least 8 characters long and include: one uppercase letter, one lowercase letter, one number, and one special character (such as !, @, #, $, %, &, *, ?, ., ,, etc.)"
   },
   "onboarding": {
     "skip": "SKIP",
@@ -219,7 +220,10 @@
     "openSite": "Open Site",
     "shareTitle": "Share this place",
     "shareMessage": "Check out {name} in {address}, {city}! I found this amazing place on GoldenBook.",
-    "shareError": "Could not share this content. Please try again."
+    "shareError": "Could not share this content. Please try again.",
+    "closed": "Closed",
+    "opensAt": "Opens at",
+    "closedToday": "Closed today"
   },
   "favorites": {
     "myFavorites": "My Favorites",
@@ -276,11 +280,11 @@
     "googleAccountSubtitle": "Your account is managed through Google. To change your password or profile information, please visit your Google Account settings.",
     "googleAccountNotice": "Password and profile changes must be made through your Google Account.",
     "deleteAccountTitle": "Delete your account",
-    "deleteAccountSubtitle": "Click the button below to permanently delete your account.",
+    "deleteAccountSubtitle": "Deleting your account will permanently remove all your personal data, preferences, saved items, and associated account information from our systems.",
     "deleteAccountGoogleSubtitle": "Click the button below to permanently delete your account. This will remove your account from our app, but your Google account will remain active.",
     "deleteAccountButton": "Permanently delete my account",
     "deleteAccountConfirmTitle": "Delete Account",
-    "deleteAccountConfirmMessage": "Are you sure you want to permanently delete your account? This action cannot be undone.",
+    "deleteAccountConfirmMessage": "Are you sure you want to permanently delete your account and all associated data? This action cannot be undone.",
     "deleteAccountConfirmGoogleMessage": "Are you sure you want to permanently delete your Google account? This action cannot be undone.",
     "deleteAccountSuccessTitle": "Account Deleted",
     "deleteAccountSuccessMessage": "Your account has been permanently deleted.",
@@ -297,7 +301,7 @@
     "benefit1": "Discover places near you",
     "benefit2": "Get accurate directions",
     "benefit3": "Receive personalized recommendations",
-    "allowAccess": "Allow location access",
+    "allowAccess": "Continue",
     "notNow": "Not now",
     "privacyNote": "Your location is only used to improve your experience and is not shared with third parties.",
     "permissionDenied": "Permission denied",

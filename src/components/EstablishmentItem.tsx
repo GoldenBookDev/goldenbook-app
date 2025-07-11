@@ -57,6 +57,125 @@ const EstablishmentItem: React.FC<EstablishmentItemProps> = ({
         return categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
     };
 
+    // ✅ NUEVA FUNCIÓN: Procesar horarios de apertura
+    const parseOpeningHours = (openingHours: string) => {
+        if (!openingHours || openingHours.trim() === '') {
+            return null;
+        }
+
+        try {
+            // Obtener el día actual (0 = Domingo, 1 = Lunes, etc.)
+            const today = new Date().getDay();
+            const currentHour = new Date().getHours();
+            const currentMinutes = new Date().getMinutes();
+            const currentTime = currentHour * 60 + currentMinutes; // En minutos desde medianoche
+
+            // Mapeo de días en diferentes idiomas
+            const dayMappings: { [key: string]: number } = {
+                // Portugués
+                'domingo': 0, 'segunda': 1, 'terça': 2, 'quarta': 3,
+                'quinta': 4, 'sexta': 5, 'sábado': 6,
+                // Inglés
+                'sunday': 0, 'monday': 1, 'tuesday': 2, 'wednesday': 3,
+                'thursday': 4, 'friday': 5, 'saturday': 6
+            };
+
+            // Normalizar el texto
+            const normalizedHours = openingHours.toLowerCase();
+
+            // Verificar si está cerrado hoy
+            if (normalizedHours.includes('fechado') || normalizedHours.includes('closed')) {
+                return { isOpen: false, message: i18n.t('establishment.closed') || 'Closed' };
+            }
+
+            // Buscar patrones de horarios (ej: "12:00 – 15:00; 18:00 – 22:00")
+            const timeRangeRegex = /(\d{1,2}):(\d{2})\s*[–-]\s*(\d{1,2}):(\d{2})/g;
+            const timeRanges = [...normalizedHours.matchAll(timeRangeRegex)];
+
+            if (timeRanges.length > 0) {
+                // Verificar si está abierto ahora
+                let isCurrentlyOpen = false;
+                let nextOpenTime = '';
+                let closingTime = '';
+
+                for (const range of timeRanges) {
+                    const openHour = parseInt(range[1]);
+                    const openMin = parseInt(range[2]);
+                    const closeHour = parseInt(range[3]);
+                    const closeMin = parseInt(range[4]);
+
+                    const openTime = openHour * 60 + openMin;
+                    const closeTime = closeHour * 60 + closeMin;
+
+                    if (currentTime >= openTime && currentTime <= closeTime) {
+                        isCurrentlyOpen = true;
+                        closingTime = `${range[3]}:${range[4]}`;
+                        break;
+                    } else if (currentTime < openTime && !nextOpenTime) {
+                        nextOpenTime = `${range[1]}:${range[2]}`;
+                    }
+                }
+
+                if (isCurrentlyOpen) {
+                    return {
+                        isOpen: true,
+                        message: `${i18n.t('category.closes')} ${closingTime}`
+                    };
+                } else if (nextOpenTime) {
+                    return {
+                        isOpen: false,
+                        message: `${i18n.t('establishment.opensAt')} ${nextOpenTime}` || `Opens at ${nextOpenTime}`
+                    };
+                } else {
+                    return {
+                        isOpen: false,
+                        message: i18n.t('establishment.closedToday') || 'Closed today'
+                    };
+                }
+            }
+
+            // Si no se puede parsear, mostrar texto simplificado
+            return {
+                isOpen: null, // Estado desconocido
+                message: openingHours.length > 30
+                    ? `${openingHours.substring(0, 27)}...`
+                    : openingHours
+            };
+
+        } catch (error) {
+            console.warn('Error parsing opening hours:', error);
+            return null;
+        }
+    };
+
+    // ✅ RENDERIZAR STATUS DE HORARIOS
+    const renderOpeningStatus = () => {
+        const hoursInfo = parseOpeningHours(item.openingHours);
+
+        if (!hoursInfo) {
+            return null; // No mostrar nada si no hay horarios
+        }
+
+        const { isOpen, message } = hoursInfo;
+
+        return (
+            <Text style={styles.statusText}>
+                {isOpen === true && (
+                    <>
+                        <Text style={styles.openText}>{i18n.t('category.open')}</Text>
+                        <Text style={styles.closeText}> · {message}</Text>
+                    </>
+                )}
+                {isOpen === false && (
+                    <Text style={styles.closedText}>{message}</Text>
+                )}
+                {isOpen === null && (
+                    <Text style={styles.hoursText}>{message}</Text>
+                )}
+            </Text>
+        );
+    };
+
     const imageUrl = item.mainImage ? getImageUrl(item.mainImage) : '';
     const primaryCategory = item.categories && item.categories.length > 0 ? item.categories[0] : '';
 
@@ -141,10 +260,8 @@ const EstablishmentItem: React.FC<EstablishmentItemProps> = ({
                             source={require('../assets/images/icons/wheelchair.png')}
                             style={styles.wheelchairIcon}
                         />
-                        <Text style={styles.statusText}>
-                            <Text style={styles.openText}>{i18n.t('category.open')}</Text>
-                            <Text style={styles.closeText}> · {i18n.t('category.closes')} 22:00</Text>
-                        </Text>
+                        {/* ✅ USAR HORARIOS DINÁMICOS */}
+                        {renderOpeningStatus()}
                     </View>
                 </View>
             </View>
@@ -220,7 +337,7 @@ const styles = StyleSheet.create({
     establishmentCategory: {
         fontSize: width * 0.035,
         fontFamily: 'EuclidSquare-Regular',
-        color: '#915A17', // ✅ Color consistente
+        color: '#915A17',
     },
     establishmentLocation: {
         fontSize: width * 0.035,
@@ -259,8 +376,8 @@ const styles = StyleSheet.create({
         color: '#495057',
     },
     reviewCountActive: {
-        color: '#915A17', // ✅ Color dorado para el texto cuando está activo
-        fontFamily: 'EuclidSquare-Medium', // ✅ Un poco más bold cuando está activo
+        color: '#915A17',
+        fontFamily: 'EuclidSquare-Medium',
     },
     accessibilityAndStatus: {
         flexDirection: 'row',
@@ -281,6 +398,12 @@ const styles = StyleSheet.create({
     },
     closeText: {
         color: '#6C757D',
+    },
+    closedText: {
+        color: '#DC3545', // Rojo para cerrado
+    },
+    hoursText: {
+        color: '#6C757D', // Gris para horarios generales
     },
 });
 

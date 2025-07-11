@@ -27,7 +27,8 @@
     "acceptTermsRequired": "Aceito os Termos e Condições e Política de Privacidade",
     "receivePromotionalEmails": "Quero receber ofertas exclusivas e recomendações",
     "signingIn": "A iniciar sessão...",
-    "enterPassword": "Por favor, introduza a sua palavra-passe"
+    "enterPassword": "Por favor, introduza a sua palavra-passe",
+    "passwordRequirements": "A palavra-passe deve ter pelo menos 8 caracteres e incluir: uma letra maiúscula, uma letra minúscula, um número e um carácter especial (como !, @, #, $, %, &, *, ?, ., ,, etc.)"
   },
   "onboarding": {
     "skip": "SALTAR",
@@ -219,7 +220,10 @@
     "openSite": "Abrir Site",
     "shareTitle": "Partilhar este local",
     "shareMessage": "Veja {name} em {address}, {city}! Encontrei este lugar incrível no GoldenBook.",
-    "shareError": "Não foi possível partilhar este conteúdo. Por favor, tente novamente."
+    "shareError": "Não foi possível partilhar este conteúdo. Por favor, tente novamente.",
+    "closed": "Fechado",
+    "opensAt": "Abre às",
+    "closedToday": "Fechado hoje"
   },
   "favorites": {
     "myFavorites": "Os Meus Favoritos",
@@ -276,11 +280,11 @@
     "googleAccountSubtitle": "A sua conta é gerida através do Google. Para alterar a sua palavra-passe ou informações do perfil, por favor visite as definições da sua Conta Google.",
     "googleAccountNotice": "As alterações de palavra-passe e perfil devem ser feitas através da sua Conta Google.",
     "deleteAccountTitle": "Eliminar a sua conta",
-    "deleteAccountSubtitle": "Clique no botão abaixo para eliminar permanentemente a sua conta.",
+    "deleteAccountSubtitle": "Ao eliminar a sua conta, todos os seus dados pessoais, preferências, itens guardados e informações de conta associadas serão removidos permanentemente dos nossos sistemas.",
     "deleteAccountGoogleSubtitle": "Clique no botão abaixo para eliminar permanentemente a sua conta. Isto removerá a sua conta da nossa aplicação, mas a sua conta Google permanecerá activa.",
     "deleteAccountButton": "Eliminar permanentemente a minha conta",
     "deleteAccountConfirmTitle": "Eliminar Conta",
-    "deleteAccountConfirmMessage": "Tem a certeza de que quer eliminar permanentemente a sua conta? Esta acção não pode ser desfeita.",
+    "deleteAccountConfirmMessage": "Tem a certeza de que quer eliminar permanentemente a sua conta e todos os dados associados? Esta ação não pode ser desfeita.",
     "deleteAccountConfirmGoogleMessage": "Tem a certeza de que quer eliminar permanentemente a sua conta Google? Esta acção não pode ser desfeita.",
     "deleteAccountSuccessTitle": "Conta Eliminada",
     "deleteAccountSuccessMessage": "A sua conta foi eliminada permanentemente.",
@@ -297,7 +301,7 @@
     "benefit1": "Descobre locais perto de ti",
     "benefit2": "Obtém direções precisas",
     "benefit3": "Recebe recomendações personalizadas",
-    "allowAccess": "Permitir acesso à localização",
+    "allowAccess": "Continuar",
     "notNow": "Agora não",
     "privacyNote": "A tua localização é usada apenas para melhorar a tua experiência e não é partilhada com terceiros.",
     "permissionDenied": "Permissão negada",

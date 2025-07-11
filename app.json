@@ -5,7 +5,7 @@
     "scheme": "com.bwebstudio.goldenbook",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon_fixed.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
@@ -14,12 +14,22 @@
       "backgroundColor": "#ffffff"
     },
     "plugins": [
+      "expo-apple-authentication",
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Goldenbook needs to access your location to show nearby places.",
-          "locationAlwaysPermission": "Goldenbook uses your location to show nearby places even when the app is in the background.",
-          "locationWhenInUsePermission": "Goldenbook uses your location to show nearby places."
+          "locationAlwaysAndWhenInUsePermission": {
+            "en": "Goldenbook needs access to your location to show you nearby places.",
+            "pt-PT": "O Goldenbook precisa de aceder à sua localização para mostrar-lhe locais próximos."
+          },
+          "locationAlwaysPermission": {
+            "en": "Goldenbook uses your location to show you nearby places even when the app is in the background.",
+            "pt-PT": "O Goldenbook utiliza a sua localização para mostrar-lhe locais próximos, mesmo quando a app está em segundo plano."
+          },
+          "locationWhenInUsePermission": {
+            "en": "Goldenbook uses your location to show you nearby places.",
+            "pt-PT": "O Goldenbook utiliza a sua localização para mostrar-lhe locais próximos."
+          }
         }
       ],
       [
@@ -54,10 +64,8 @@
       "expo-localization"
     ],
     "ios": {
-      "icon": "./assets/icon.png",
       "bundleIdentifier": "com.bwebstudio.goldenbook",
-      "supportsTablet": true,
-      "buildNumber": "3",
+      "supportsTablet": false,
       "config": {
         "googleMapsApiKey": "AIzaSyDVJnSG4u2xmUCSK421laj3tLx3ZH7NDdM"
       },
@@ -65,7 +73,19 @@
         "applinks:meek-toffee-0a1ea2.netlify.app"
       ],
       "infoPlist": {
-        "NSUserTrackingUsageDescription": "Goldenbook uses tracking to provide personalized content and improve user experience."
+        "NSUserTrackingUsageDescription": "Goldenbook uses tracking to provide personalized content and improve user experience.",
+        "NSLocationWhenInUseUsageDescription": {
+          "en": "Goldenbook uses your location to show you nearby places.",
+          "pt-PT": "O Goldenbook utiliza a sua localização para mostrar-lhe locais próximos."
+        },
+        "NSLocationAlwaysUsageDescription": {
+          "en": "Goldenbook uses your location to show you nearby places even when the app is in the background.",
+          "pt-PT": "O Goldenbook utiliza a sua localização para mostrar-lhe locais próximos, mesmo quando a app está em segundo plano."
+        },
+        "NSLocationAlwaysAndWhenInUseUsageDescription": {
+          "en": "Goldenbook needs access to your location to show you nearby places.",
+          "pt-PT": "O Goldenbook precisa de aceder à sua localização para mostrar-lhe locais próximos."
+        }
       }
     },
     "android": {

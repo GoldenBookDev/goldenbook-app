@@ -327,15 +327,25 @@ export const isLiked = async (userId: string, establishmentId: string): Promise<
   }
 };
 
-// En tu userService.js
+
+/**
+ * Delete *all* user data from Firestore for GDPR/account deletion compliance.
+ */
 export const deleteUserProfile = async (userId: string) => {
   try {
+    console.log(`🗑️ Deleting Firestore user document for UID: ${userId}`);
+
+    // Only your single collection:
     await deleteDoc(doc(db, 'users', userId));
+    console.log('✅ Deleted: /users/' + userId);
+
+    console.log('✅ All user data deleted for UID:', userId);
   } catch (error) {
-    console.error('Error deleting user profile:', error);
+    console.error('❌ Error deleting user data:', error);
     throw error;
   }
 };
+
 
 export const saveUserPreferences = async (userId: string, preferences: any, userProfile?: any) => {
   try {

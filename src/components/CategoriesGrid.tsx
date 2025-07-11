@@ -54,6 +54,8 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         marginBottom: width * 0.04,
+        // ✅ AGREGAR: Padding horizontal para mantener alineación con otros elementos
+        paddingHorizontal: width * 0.06,
     },
     categoryItem: {
         width: '48%',
